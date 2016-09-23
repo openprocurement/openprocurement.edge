@@ -13,6 +13,10 @@ from openprocurement.api.utils import VERSION
 from openprocurement.api.design import sync_design
 from openprocurement.api.tests.base import BaseWebTest
 
+try:
+    from openprocurement.contracting.api.tests.base import test_contract_data
+except ImportError:
+    test_contract_data = None
 
 now = datetime.now()
 test_organization = {
@@ -216,12 +220,6 @@ for bid in test_auction_bids:
 
 
 class TenderBaseWebTest(BaseWebTest):
-
-    """Base Web Test to test openprocurement.api.
-
-    It setups the database before each test and delete it after.
-    """
-
     initial_data = test_tender_data
     initial_lots = test_lots
     initial_bids = test_bids
@@ -234,9 +232,8 @@ class TenderBaseWebTest(BaseWebTest):
 
     def create_tender(self, initial_data=initial_data):
         data = deepcopy(initial_data)
-        data['id'] = uuid4().hex
+        data['_id'] = data['id'] = uuid4().hex
         data['status'] = 'active'
-        data['_id'] = data['id']
         data['doc_type'] = "Tender"
         data['dateModified'] = get_now().isoformat()
         data['tenderID'] = "UA-X"
@@ -295,12 +292,6 @@ class TenderBaseWebTest(BaseWebTest):
 
 
 class AuctionBaseWebTest(BaseWebTest):
-
-    """Base Web Test to test openprocurement.api.
-
-    It setups the database before each test and delete it after.
-    """
-
     initial_data = test_auction_data
     initial_bids = test_auction_bids
     initial_award = test_award
@@ -311,12 +302,11 @@ class AuctionBaseWebTest(BaseWebTest):
 
     def create_auction(self, initial_data=initial_data):
         data = deepcopy(initial_data)
-        data['id'] = uuid4().hex
+        data['_id'] = data['id'] = uuid4().hex
         data['status'] = 'active'
-        data['_id'] = data['id']
         data['doc_type'] = "Auction"
         data['dateModified'] = get_now().isoformat()
-        data['auctionID'] = "UA-X"
+        data['auctionID'] = "UA-EA-X"
 
         if self.initial_bids:
             data['bids'] = deepcopy(self.initial_bids)
@@ -332,6 +322,32 @@ class AuctionBaseWebTest(BaseWebTest):
                     document['id'] = uuid4().hex
                     document['dateModified'] = get_now().isoformat()
                     data['awards'][0]['documents'] = [document]
+        if self.initial_document:
+            document = deepcopy(self.initial_document)
+            document['id'] = uuid4().hex
+            document['dateModified'] = get_now().isoformat()
+            data['documents'] = [document]
+        self.db.save(data)
+        data = self.db[data['id']]
+        del data['_id']
+        del data['_rev']
+        del data['doc_type']
+        return data
+
+
+class ContractBaseWebTest(BaseWebTest):
+    initial_data = test_auction_data
+    initial_document = test_document
+
+    relative_to = os.path.dirname(__file__)
+
+    def create_contract(self, initial_data=initial_data):
+        data = deepcopy(initial_data)
+        data['_id'] = data['id'] = uuid4().hex
+        data['status'] = 'active'
+        data['doc_type'] = "Contract"
+        data['dateModified'] = get_now().isoformat()
+        data['auctionID'] = "UA-X"
         if self.initial_document:
             document = deepcopy(self.initial_document)
             document['id'] = uuid4().hex

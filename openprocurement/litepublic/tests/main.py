@@ -2,13 +2,14 @@
 
 import unittest
 
-from openprocurement.litepublic.tests import tenders, auctions, health, spore
+from openprocurement.litepublic.tests import tenders, auctions, contracts, health, spore
 
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(tenders.suite())
     suite.addTest(auctions.suite())
+    suite.addTest(contracts.suite())
     suite.addTest(health.suite())
     suite.addTest(spore.suite())
     return suite
