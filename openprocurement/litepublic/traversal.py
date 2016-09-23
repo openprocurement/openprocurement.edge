@@ -94,3 +94,21 @@ def contract_factory(request):
     request.validated['item'] = get_item(request, contract)
     request.validated['id'] = request.matchdict['contract_id']
     return contract
+
+
+def plan_factory(request):
+    request.validated['plan_src'] = {}
+    root = Root(request)
+    if not request.matchdict or not request.matchdict.get('plan_id'):
+        return root
+    request.validated['plan_id'] = request.matchdict['plan_id']
+    plan = request.plan
+    del plan._id
+    del plan.doc_type
+    plan.__parent__ = root
+    request.validated['plan'] = request.validated['db_doc'] = plan
+    request.validated['plan'].rev = plan.pop('_rev')
+    request.validated['plan_status'] = plan.status
+    request.validated['item'] = get_item(request, plan)
+    request.validated['id'] = request.matchdict['plan_id']
+    return plan

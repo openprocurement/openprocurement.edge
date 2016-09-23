@@ -18,6 +18,11 @@ try:
 except ImportError:
     test_contract_data = None
 
+try:
+    from openprocurement.planning.api.tests.base import test_plan_data
+except ImportError:
+    test_plan_data = None
+
 test_award = {'suppliers': [test_organization], 'status': 'pending', 'bid_id': ''}
 
 test_complaint = {'title': 'complaint title', 'description': 'complaint description', 'author': test_organization}
@@ -152,7 +157,7 @@ class AuctionBaseWebTest(BaseWebTest):
 
 
 class ContractBaseWebTest(BaseWebTest):
-    initial_data = test_auction_data
+    initial_data = test_contract_data
     initial_document = test_document
 
     relative_to = os.path.dirname(__file__)
@@ -163,7 +168,33 @@ class ContractBaseWebTest(BaseWebTest):
         data['status'] = 'active'
         data['doc_type'] = "Contract"
         data['dateModified'] = get_now().isoformat()
-        data['auctionID'] = "UA-X"
+        data['contractID'] = "UA-X"
+        if self.initial_document:
+            document = deepcopy(self.initial_document)
+            document['id'] = uuid4().hex
+            document['dateModified'] = get_now().isoformat()
+            data['documents'] = [document]
+        self.db.save(data)
+        data = self.db[data['id']]
+        del data['_id']
+        del data['_rev']
+        del data['doc_type']
+        return data
+
+
+class PlanBaseWebTest(BaseWebTest):
+    initial_data = test_plan_data
+    initial_document = test_document
+
+    relative_to = os.path.dirname(__file__)
+
+    def create_plan(self, initial_data=initial_data):
+        data = deepcopy(initial_data)
+        data['_id'] = data['id'] = uuid4().hex
+        data['status'] = 'active'
+        data['doc_type'] = "Plan"
+        data['dateModified'] = get_now().isoformat()
+        data['planID'] = "UA-X"
         if self.initial_document:
             document = deepcopy(self.initial_document)
             document['id'] = uuid4().hex

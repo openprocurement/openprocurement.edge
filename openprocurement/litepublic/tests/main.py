@@ -2,7 +2,7 @@
 
 import unittest
 
-from openprocurement.litepublic.tests import tenders, auctions, contracts, health, spore
+from openprocurement.litepublic.tests import tenders, auctions, contracts, plans, health, spore
 
 
 def suite():
@@ -10,6 +10,7 @@ def suite():
     suite.addTest(tenders.suite())
     suite.addTest(auctions.suite())
     suite.addTest(contracts.suite())
+    suite.addTest(plans.suite())
     suite.addTest(health.suite())
     suite.addTest(spore.suite())
     return suite

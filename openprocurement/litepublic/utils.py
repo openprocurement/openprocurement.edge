@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from cornice.resource import resource
 from functools import partial
-from openprocurement.litepublic.traversal import tender_factory, auction_factory, contract_factory
+from openprocurement.litepublic.traversal import tender_factory, auction_factory, contract_factory, plan_factory
 from pyramid.exceptions import URLDecodeError
 from pyramid.compat import decode_path_info
 from munch import munchify
@@ -10,6 +10,7 @@ from openprocurement.api.utils import error_handler
 opresource = partial(resource, error_handler=error_handler, factory=tender_factory)
 eaopresource = partial(resource, error_handler=error_handler, factory=auction_factory)
 contractingresource = partial(resource, error_handler=error_handler, factory=contract_factory)
+planningresource = partial(resource, error_handler=error_handler, factory=plan_factory)
 
 
 def extract_doc_adapter(request, doc_id, doc_type):
@@ -51,3 +52,7 @@ def extract_auction(request):
 
 def extract_contract(request):
     return extract_doc(request, 'Contract')
+
+
+def extract_plan(request):
+    return extract_doc(request, 'Plan')

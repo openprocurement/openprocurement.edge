@@ -11,7 +11,7 @@ from logging import getLogger
 from openprocurement.api.auth import AuthenticationPolicy, authenticated_role, check_accreditation
 from openprocurement.api.design import sync_design
 from openprocurement.api.utils import forbidden, add_logging_context, extract_tender, request_params, set_renderer, beforerender, route_prefix, set_logging_context
-from openprocurement.litepublic.utils import extract_tender, extract_auction, extract_contract
+from openprocurement.litepublic.utils import extract_tender, extract_auction, extract_contract, extract_plan
 try:
     import openprocurement.auctions.core as auctions_core
     from openprocurement.auctions.core.design import add_design as add_auction_design
@@ -22,6 +22,11 @@ try:
     from openprocurement.contracting.api.design import add_design as add_contract_design
 except ImportError:
      contracting = None
+try:
+    import openprocurement.planning.api as planning
+    from openprocurement.planning.api.design import add_design as add_plan_design
+except ImportError:
+     planning = None
 from pbkdf2 import PBKDF2
 from pyramid.authorization import ACLAuthorizationPolicy as AuthorizationPolicy
 from pyramid.config import Configurator
@@ -97,6 +102,11 @@ def main(global_config, **settings):
         config.add_request_method(extract_contract, 'contract', reify=True)
         config.scan("openprocurement.litepublic.views.contracts")
         add_contract_design()
+
+    if planning:
+        config.add_request_method(extract_plan, 'plan', reify=True)
+        config.scan("openprocurement.litepublic.views.plans")
+        add_plan_design()
 
     # CouchDB connection
     db_name = os.environ.get('DB_NAME', settings['couchdb.db_name'])
