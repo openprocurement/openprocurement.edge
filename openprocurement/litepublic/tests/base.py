@@ -209,8 +209,13 @@ test_document = {
     'format': 'application/msword',
 }
 
+test_auction_data = deepcopy(test_tender_data)
+test_auction_bids = deepcopy(test_bids)
+for bid in test_auction_bids:
+    bid['value']['amount'] = bid['value']['amount'] * bid['value']['amount']
 
-class BaseWebTest(BaseWebTest):
+
+class TenderBaseWebTest(BaseWebTest):
 
     """Base Web Test to test openprocurement.api.
 
@@ -276,6 +281,57 @@ class BaseWebTest(BaseWebTest):
                         award_complaint_document['id'] = uuid4().hex
                         award_complaint_document['dateModified'] = get_now().isoformat()
                         data['awards'][0]['complaints'][0]['documents'] = [award_complaint_document]
+        if self.initial_document:
+            document = deepcopy(self.initial_document)
+            document['id'] = uuid4().hex
+            document['dateModified'] = get_now().isoformat()
+            data['documents'] = [document]
+        self.db.save(data)
+        data = self.db[data['id']]
+        del data['_id']
+        del data['_rev']
+        del data['doc_type']
+        return data
+
+
+class AuctionBaseWebTest(BaseWebTest):
+
+    """Base Web Test to test openprocurement.api.
+
+    It setups the database before each test and delete it after.
+    """
+
+    initial_data = test_auction_data
+    initial_bids = test_auction_bids
+    initial_award = test_award
+    initial_award_document = test_document
+    initial_document = test_document
+
+    relative_to = os.path.dirname(__file__)
+
+    def create_auction(self, initial_data=initial_data):
+        data = deepcopy(initial_data)
+        data['id'] = uuid4().hex
+        data['status'] = 'active'
+        data['_id'] = data['id']
+        data['doc_type'] = "Auction"
+        data['dateModified'] = get_now().isoformat()
+        data['auctionID'] = "UA-X"
+
+        if self.initial_bids:
+            data['bids'] = deepcopy(self.initial_bids)
+            data['bids'][0]['id'] = uuid4().hex
+            if self.initial_award:
+                award = deepcopy(self.initial_award)
+                award['id'] = uuid4().hex
+                award['bid_id'] = data['bids'][0]['id']
+                award['date'] = get_now().isoformat()
+                data['awards'] = [award]
+                if self.initial_award_document:
+                    document = deepcopy(self.initial_award_document)
+                    document['id'] = uuid4().hex
+                    document['dateModified'] = get_now().isoformat()
+                    data['awards'][0]['documents'] = [document]
         if self.initial_document:
             document = deepcopy(self.initial_document)
             document['id'] = uuid4().hex

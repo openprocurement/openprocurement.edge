@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
 from cornice.resource import resource
 from functools import partial
-from openprocurement.litepublic.traversal import factory
+from openprocurement.litepublic.traversal import tender_factory, auction_factory
 from pyramid.exceptions import URLDecodeError
 from pyramid.compat import decode_path_info
 from munch import munchify
 from openprocurement.api.utils import error_handler
 
+opresource = partial(resource, error_handler=error_handler, factory=tender_factory)
+eaopresource = partial(resource, error_handler=error_handler, factory=auction_factory)
 
-opresource = partial(resource, error_handler=error_handler, factory=factory)
 
-
-def extract_tender_adapter(request, tender_id):
+def extract_doc_adapter(request, doc_id, doc_type):
     db = request.registry.db
-    doc = db.get(tender_id)
-    if doc is None or doc.get('doc_type') != 'Tender':
-        request.errors.add('url', 'tender_id', 'Not Found')
+    doc = db.get(doc_id)
+    if doc is None or doc.get('doc_type') != doc_type:
+        request.errors.add('url', '{}_id'.format(doc_type.lower()), 'Not Found')
         request.errors.status = 404
         raise error_handler(request.errors)
-
     return munchify(doc)
 
 
-def extract_tender(request):
+def extract_doc(request, doc_type):
     try:
         # empty if mounted under a path in mod_wsgi, for example
         path = decode_path_info(request.environ['PATH_INFO'] or '/')
@@ -31,11 +30,19 @@ def extract_tender(request):
     except UnicodeDecodeError as e:
         raise URLDecodeError(e.encoding, e.object, e.start, e.end, e.reason)
 
-    tender_id = ""
-    # extract tender id
+    doc_id = ""
+    # extract doc id
     parts = path.split('/')
-    if len(parts) < 4 or parts[3] != 'tenders':
+    if len(parts) < 4 or parts[3] != '{}s'.format(doc_type.lower()):
         return
 
-    tender_id = parts[4]
-    return extract_tender_adapter(request, tender_id)
+    doc_id = parts[4]
+    return extract_doc_adapter(request, doc_id, doc_type)
+
+
+def extract_tender(request):
+    return extract_doc(request, 'Tender')
+
+
+def extract_auction(request):
+    return extract_doc(request, 'Auction')
