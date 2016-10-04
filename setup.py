@@ -32,10 +32,13 @@ entry_points = {
     'paste.app_factory': [
         'main = openprocurement.litepublic:main'
     ],
+    'console_scripts': [
+        'litepublic_data_bridge = openprocurement.litepublic.databridge:main'
+    ]
 }
 
 setup(name='openprocurement.litepublic',
-      version='2.3.18',
+      version='1.0.0',
       description='openprocurement.litepublic',
       long_description=README,
       classifiers=[
