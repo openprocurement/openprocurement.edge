@@ -8,6 +8,7 @@ except ImportError:
     pass
 
 import logging
+import logging.config
 import os
 import argparse
 from yaml import load
