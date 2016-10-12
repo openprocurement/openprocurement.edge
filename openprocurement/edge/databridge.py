@@ -20,12 +20,12 @@ from openprocurement_client.client import TendersClient
 logger = logging.getLogger(__name__)
 
 
-class LitePublicDataBridge(object):
+class EdgeDataBridge(object):
 
-    """Lite Public Bridge"""
+    """Edge Bridge"""
 
     def __init__(self, config):
-        super(LitePublicDataBridge, self).__init__()
+        super(EdgeDataBridge, self).__init__()
         self.config = config
         self.api_host = self.config_get('tenders_api_server')
         self.api_version = self.config_get('tenders_api_version')
@@ -68,28 +68,28 @@ class LitePublicDataBridge(object):
                 self.db.save(tender)
             except Exception as e:
                 logger.info('Saving tender {} fail with error {}'.format(tender_id, e.message),
-                    extra={'MESSAGE_ID': 'lite_public_bridge_fail_save_in_db'})
+                    extra={'MESSAGE_ID': 'edge_bridge_fail_save_in_db'})
         else:
             logger.info('Tender {} not found'.format(tender_id))
 
     def run(self):
-        logger.info('Start Lite Public Bridge',
-                    extra={'MESSAGE_ID': 'lite_public_bridge_start_bridge'})
+        logger.info('Start Edge Bridge',
+                    extra={'MESSAGE_ID': 'edge_bridge_start_bridge'})
         logger.info('Start data sync...',
-                    extra={'MESSAGE_ID': 'lite_public_bridge__data_sync'})
+                    extra={'MESSAGE_ID': 'edge_bridge__data_sync'})
         for tender_id, date_modified in self.get_teders_list():
             self.save_tender_in_db(tender_id, date_modified)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='---- Lite Public Bridge ----')
+    parser = argparse.ArgumentParser(description='---- Edge Bridge ----')
     parser.add_argument('config', type=str, help='Path to configuration file')
     params = parser.parse_args()
     if os.path.isfile(params.config):
         with open(params.config) as config_file_obj:
             config = load(config_file_obj.read())
         logging.config.dictConfig(config)
-        LitePublicDataBridge(config).run()
+        EdgeDataBridge(config).run()
 
 
 ##############################################################

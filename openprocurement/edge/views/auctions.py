@@ -1,39 +1,40 @@
 # -*- coding: utf-8 -*-
+
 from functools import partial
+from openprocurement.api.models import get_now
 from openprocurement.api.utils import (
     context_unpack,
     decrypt,
     encrypt,
     json_view,
-
     APIResource,
 )
-from openprocurement.litepublic.utils import planningresource
+from openprocurement.edge.utils import eaopresource
 
 try:
-    import openprocurement.planning.api as planning
-except ImportError:
-     planning = None
+    import openprocurement.auctions.core as auctions_core
+except:
+    auctions_core = None
 
-if planning:
-    from openprocurement.planning.api.design import (
+if auctions_core:
+    from openprocurement.auctions.core.design import (
         FIELDS,
-        plans_by_dateModified_view,
-        plans_real_by_dateModified_view,
-        plans_test_by_dateModified_view,
-        plans_by_local_seq_view,
-        plans_real_by_local_seq_view,
-        plans_test_by_local_seq_view,
+        auctions_by_dateModified_view,
+        auctions_real_by_dateModified_view,
+        auctions_test_by_dateModified_view,
+        auctions_by_local_seq_view,
+        auctions_real_by_local_seq_view,
+        auctions_test_by_local_seq_view,
     )
     VIEW_MAP = {
-        u'': plans_real_by_dateModified_view,
-        u'test': plans_test_by_dateModified_view,
-        u'_all_': plans_by_dateModified_view,
+        u'': auctions_real_by_dateModified_view,
+        u'test': auctions_test_by_dateModified_view,
+        u'_all_': auctions_by_dateModified_view,
     }
     CHANGES_VIEW_MAP = {
-        u'': plans_real_by_local_seq_view,
-        u'test': plans_test_by_local_seq_view,
-        u'_all_': plans_by_local_seq_view,
+        u'': auctions_real_by_local_seq_view,
+        u'test': auctions_test_by_local_seq_view,
+        u'_all_': auctions_by_local_seq_view,
     }
     FEED = {
         u'dateModified': VIEW_MAP,
@@ -41,28 +42,28 @@ if planning:
     }
 
 
-@planningresource(name='Plans',
-            path='/plans',
-            description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
-class PlansResource(APIResource):
+@eaopresource(name='Auctions',
+            path='/auctions',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
+class AuctionsResource(APIResource):
 
     def __init__(self, request, context):
-        super(PlansResource, self).__init__(request, context)
+        super(AuctionsResource, self).__init__(request, context)
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_plan')
+    @json_view(permission='view_auction')
     def get(self):
-        """Plans List
+        """Auctions List
 
-        Get Plans List
+        Get Auctions List
         ----------------
 
-        Example request to get plans list:
+        Example request to get auctions list:
 
         .. sourcecode:: http
 
-            GET /plans HTTP/1.1
+            GET /auctions HTTP/1.1
             Host: example.com
             Accept: application/json
 
@@ -147,8 +148,8 @@ class PlansResource(APIResource):
                     for x in view()
                 ]
             elif fields:
-                self.LOGGER.info('Used custom fields for plans list: {}'.format(','.join(sorted(fields))),
-                            extra=context_unpack(self.request, {'MESSAGE_ID': 'plan_list_custom'}))
+                self.LOGGER.info('Used custom fields for auctions list: {}'.format(','.join(sorted(fields))),
+                            extra=context_unpack(self.request, {'MESSAGE_ID': 'auction_list_custom'}))
 
                 results = [
                     (dict([(k, j) for k, j in i[u'doc'].items() if k in view_fields]), i.key)
@@ -177,36 +178,36 @@ class PlansResource(APIResource):
             'data': results,
             'next_page': {
                 "offset": params['offset'],
-                "path": self.request.route_path('Plans', _query=params),
-                "uri": self.request.route_url('Plans', _query=params)
+                "path": self.request.route_path('Auctions', _query=params),
+                "uri": self.request.route_url('Auctions', _query=params)
             }
         }
         if descending or offset:
             data['prev_page'] = {
                 "offset": pparams['offset'],
-                "path": self.request.route_path('Plans', _query=pparams),
-                "uri": self.request.route_url('Plans', _query=pparams)
+                "path": self.request.route_path('Auctions', _query=pparams),
+                "uri": self.request.route_url('Auctions', _query=pparams)
             }
         return data
 
 
-@planningresource(name='Plan',
-            path='/plans/{plan_id}',
-            description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
-class PlanResource(APIResource):
+@eaopresource(name='Auction',
+            path='/auctions/{auction_id}',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
+class AuctionResource(APIResource):
 
-    @json_view(permission='view_plan')
-    def get(self):
-        del self.request.validated['plan'].__parent__
-        del self.request.validated['plan'].rev
-        return {'data': self.request.validated['plan']}
+        @json_view(permission='view_auction')
+        def get(self):
+            del self.request.validated['auction'].__parent__
+            del self.request.validated['auction'].rev
+            return {'data': self.request.validated['auction']}
 
 
-@planningresource(name='Plan Items',
-            path='/plans/{plan_id}/*items',
-            description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
-class PlanItemsResource(APIResource):
+@eaopresource(name='Auction Items',
+            path='/auctions/{auction_id}/*items',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
+class AuctionItemsResource(APIResource):
 
-    @json_view(permission='view_plan')
+    @json_view(permission='view_auction')
     def get(self):
         return {'data': self.request.validated['item']}

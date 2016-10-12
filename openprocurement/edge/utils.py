@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from cornice.resource import resource
 from functools import partial
-from openprocurement.litepublic.traversal import tender_factory, auction_factory, contract_factory, plan_factory
+from openprocurement.edge.traversal import tender_factory, auction_factory, contract_factory, plan_factory
 from pyramid.exceptions import URLDecodeError
 from pyramid.compat import decode_path_info
 from munch import munchify

@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from openprocurement.api import ROUTE_PREFIX
 from openprocurement.api.models import get_now
-from openprocurement.litepublic.tests.base import test_tender_data, TenderBaseWebTest, test_award, test_complaint, test_document
+from openprocurement.edge.tests.base import test_tender_data, TenderBaseWebTest, test_award, test_complaint, test_document
 
 
 class TenderResourceTest(TenderBaseWebTest):

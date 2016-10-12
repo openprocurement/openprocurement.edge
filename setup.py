@@ -20,7 +20,8 @@ requires = [
     'python-dateutil',
     'openprocurement_client',
     'openprocurement.api',
-    'munch'
+    'munch',
+    'pyyaml'
 ]
 test_requires = requires + [
     'webtest',
@@ -30,16 +31,16 @@ test_requires = requires + [
 
 entry_points = {
     'paste.app_factory': [
-        'main = openprocurement.litepublic:main'
+        'main = openprocurement.edge:main'
     ],
     'console_scripts': [
-        'litepublic_data_bridge = openprocurement.litepublic.databridge:main'
+        'edge_data_bridge = openprocurement.edge.databridge:main'
     ]
 }
 
-setup(name='openprocurement.litepublic',
+setup(name='openprocurement.edge',
       version='1.0.0',
-      description='openprocurement.litepublic',
+      description='openprocurement.edge',
       long_description=README,
       classifiers=[
           "Framework :: Pylons",
@@ -52,7 +53,7 @@ setup(name='openprocurement.litepublic',
       author='Quintagroup, Ltd.',
       author_email='info@quintagroup.com',
       license='Apache License 2.0',
-      url='https://github.com/openprocurement/openprocurement.litepublic',
+      url='https://github.com/openprocurement/openprocurement.edge',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['openprocurement'],
       include_package_data=True,
@@ -60,5 +61,5 @@ setup(name='openprocurement.litepublic',
       install_requires=requires,
       tests_require=test_requires,
       extras_require={'test': test_requires},
-      test_suite="openprocurement.litepublic.tests.main.suite",
+      test_suite="openprocurement.edge.tests.main.suite",
       entry_points=entry_points)

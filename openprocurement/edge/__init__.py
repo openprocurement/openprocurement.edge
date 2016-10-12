@@ -11,7 +11,7 @@ from logging import getLogger
 from openprocurement.api.auth import AuthenticationPolicy, authenticated_role, check_accreditation
 from openprocurement.api.design import sync_design
 from openprocurement.api.utils import forbidden, add_logging_context, extract_tender, request_params, set_renderer, beforerender, route_prefix, set_logging_context
-from openprocurement.litepublic.utils import extract_tender, extract_auction, extract_contract, extract_plan
+from openprocurement.edge.utils import extract_tender, extract_auction, extract_contract, extract_plan
 try:
     import openprocurement.auctions.core as auctions_core
     from openprocurement.auctions.core.design import add_design as add_auction_design
@@ -89,23 +89,23 @@ def main(global_config, **settings):
     config.add_subscriber(set_logging_context, ContextFound)
     config.add_subscriber(set_renderer, NewRequest)
     config.add_subscriber(beforerender, BeforeRender)
-    config.scan("openprocurement.litepublic.views.spore")
-    config.scan("openprocurement.litepublic.views.health")
-    config.scan("openprocurement.litepublic.views.tenders")
+    config.scan("openprocurement.edge.views.spore")
+    config.scan("openprocurement.edge.views.health")
+    config.scan("openprocurement.edge.views.tenders")
 
     if auctions_core:
         config.add_request_method(extract_auction, 'auction', reify=True)
-        config.scan("openprocurement.litepublic.views.auctions")
+        config.scan("openprocurement.edge.views.auctions")
         add_auction_design()
 
     if contracting:
         config.add_request_method(extract_contract, 'contract', reify=True)
-        config.scan("openprocurement.litepublic.views.contracts")
+        config.scan("openprocurement.edge.views.contracts")
         add_contract_design()
 
     if planning:
         config.add_request_method(extract_plan, 'plan', reify=True)
-        config.scan("openprocurement.litepublic.views.plans")
+        config.scan("openprocurement.edge.views.plans")
         add_plan_design()
 
     # CouchDB connection
@@ -133,7 +133,7 @@ def main(global_config, **settings):
                 "type": "user",
                 "password": password
             })
-            LOGGER.info("Updating litepublic db main user", extra={'MESSAGE_ID': 'update_litepublic_main_user'})
+            LOGGER.info("Updating edge db main user", extra={'MESSAGE_ID': 'update_edge_main_user'})
             users_db.save(user_doc)
         security_users = [username, ]
         if 'couchdb.reader_username' in settings and 'couchdb.reader_password' in settings:
@@ -146,7 +146,7 @@ def main(global_config, **settings):
                     "type": "user",
                     "password": settings.get('couchdb.reader_password')
                 })
-                LOGGER.info("Updating litepublic db reader user", extra={'MESSAGE_ID': 'update_litepublic_reader_user'})
+                LOGGER.info("Updating edge db reader user", extra={'MESSAGE_ID': 'update_edge_reader_user'})
                 users_db.save(reader)
             security_users.append(reader_username)
         if db_name not in aserver:
@@ -154,12 +154,12 @@ def main(global_config, **settings):
         db = aserver[db_name]
         SECURITY[u'members'][u'names'] = security_users
         if SECURITY != db.security:
-            LOGGER.info("Updating litepublic db security", extra={'MESSAGE_ID': 'update_litepublic_security'})
+            LOGGER.info("Updating edge db security", extra={'MESSAGE_ID': 'update_edge_security'})
             db.security = SECURITY
         auth_doc = db.get(VALIDATE_DOC_ID, {'_id': VALIDATE_DOC_ID})
         if auth_doc.get('validate_doc_update') != VALIDATE_DOC_UPDATE % username:
             auth_doc['validate_doc_update'] = VALIDATE_DOC_UPDATE % username
-            LOGGER.info("Updating litepublic db validate doc", extra={'MESSAGE_ID': 'update_litepublic_validate_doc'})
+            LOGGER.info("Updating edge db validate doc", extra={'MESSAGE_ID': 'update_edge_validate_doc'})
             db.save(auth_doc)
         # sync couchdb views
         sync_design(db)

@@ -1,71 +1,64 @@
 # -*- coding: utf-8 -*-
 from functools import partial
+from openprocurement.api.design import (
+    FIELDS,
+    tenders_by_dateModified_view,
+    tenders_real_by_dateModified_view,
+    tenders_test_by_dateModified_view,
+    tenders_by_local_seq_view,
+    tenders_real_by_local_seq_view,
+    tenders_test_by_local_seq_view,
+)
+
 from openprocurement.api.utils import (
     context_unpack,
     decrypt,
     encrypt,
     json_view,
-
+    tender_serialize,
     APIResource,
 )
-from openprocurement.litepublic.utils import contractingresource
-
-try:
-    import openprocurement.contracting.api as contracting
-except ImportError:
-     contracting = None
-
-if contracting:
-    from openprocurement.contracting.api.design import (
-        FIELDS,
-        contracts_by_dateModified_view,
-        contracts_real_by_dateModified_view,
-        contracts_test_by_dateModified_view,
-        contracts_by_local_seq_view,
-        contracts_real_by_local_seq_view,
-        contracts_test_by_local_seq_view,
-    )
-
-    VIEW_MAP = {
-        u'': contracts_real_by_dateModified_view,
-        u'test': contracts_test_by_dateModified_view,
-        u'_all_': contracts_by_dateModified_view,
-    }
-
-    CHANGES_VIEW_MAP = {
-        u'': contracts_real_by_local_seq_view,
-        u'test': contracts_test_by_local_seq_view,
-        u'_all_': contracts_by_local_seq_view,
-    }
-
-    FEED = {
-        u'dateModified': VIEW_MAP,
-        u'changes': CHANGES_VIEW_MAP,
-    }
+from openprocurement.edge.utils import opresource
 
 
-@contractingresource(name='Contracts',
-            path='/contracts',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
-class ContractsResource(APIResource):
+VIEW_MAP = {
+    u'': tenders_real_by_dateModified_view,
+    u'test': tenders_test_by_dateModified_view,
+    u'_all_': tenders_by_dateModified_view,
+}
+CHANGES_VIEW_MAP = {
+    u'': tenders_real_by_local_seq_view,
+    u'test': tenders_test_by_local_seq_view,
+    u'_all_': tenders_by_local_seq_view,
+}
+FEED = {
+    u'dateModified': VIEW_MAP,
+    u'changes': CHANGES_VIEW_MAP,
+}
+
+
+@opresource(name='Tenders',
+            path='/tenders',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
+class TendersResource(APIResource):
 
     def __init__(self, request, context):
-        super(ContractsResource, self).__init__(request, context)
+        super(TendersResource, self).__init__(request, context)
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_contract')
+    @json_view(permission='view_tender')
     def get(self):
-        """Contracts List
+        """Tenders List
 
-        Get Contracts List
+        Get Tenders List
         ----------------
 
-        Example request to get contracts list:
+        Example request to get tenders list:
 
         .. sourcecode:: http
 
-            GET /contracts HTTP/1.1
+            GET /tenders HTTP/1.1
             Host: example.com
             Accept: application/json
 
@@ -150,8 +143,8 @@ class ContractsResource(APIResource):
                     for x in view()
                 ]
             elif fields:
-                self.LOGGER.info('Used custom fields for contracts list: {}'.format(','.join(sorted(fields))),
-                            extra=context_unpack(self.request, {'MESSAGE_ID': 'contract_list_custom'}))
+                self.LOGGER.info('Used custom fields for tenders list: {}'.format(','.join(sorted(fields))),
+                            extra=context_unpack(self.request, {'MESSAGE_ID': 'tender_list_custom'}))
 
                 results = [
                     (dict([(k, j) for k, j in i[u'doc'].items() if k in view_fields]), i.key)
@@ -180,36 +173,36 @@ class ContractsResource(APIResource):
             'data': results,
             'next_page': {
                 "offset": params['offset'],
-                "path": self.request.route_path('Contracts', _query=params),
-                "uri": self.request.route_url('Contracts', _query=params)
+                "path": self.request.route_path('Tenders', _query=params),
+                "uri": self.request.route_url('Tenders', _query=params)
             }
         }
         if descending or offset:
             data['prev_page'] = {
                 "offset": pparams['offset'],
-                "path": self.request.route_path('Contracts', _query=pparams),
-                "uri": self.request.route_url('Contracts', _query=pparams)
+                "path": self.request.route_path('Tenders', _query=pparams),
+                "uri": self.request.route_url('Tenders', _query=pparams)
             }
         return data
 
 
-@contractingresource(name='Contract',
-            path='/contracts/{contract_id}',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
-class ContractResource(APIResource):
+@opresource(name='Tender',
+            path='/tenders/{tender_id}',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
+class TenderResource(APIResource):
 
-    @json_view(permission='view_contract')
+    @json_view(permission='view_tender')
     def get(self):
-        del self.request.validated['contract'].__parent__
-        del self.request.validated['contract'].rev
-        return {'data': self.request.validated['contract']}
+        del self.request.validated['tender'].__parent__
+        del self.request.validated['tender'].rev
+        return {'data': self.request.validated['tender']}
 
 
-@contractingresource(name='Contract Items',
-            path='/contracts/{contract_id}/*items',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
-class ContractItemsResource(APIResource):
+@opresource(name='Tender Items',
+            path='/tenders/{tender_id}/*items',
+            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
+class TenderItemsResource(APIResource):
 
-    @json_view(permission='view_contract')
+    @json_view(permission='view_tender')
     def get(self):
         return {'data': self.request.validated['item']}

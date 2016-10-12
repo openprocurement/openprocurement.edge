@@ -2,7 +2,7 @@
 
 import unittest
 
-from openprocurement.litepublic.tests import tenders, auctions, contracts, plans, health, spore
+from openprocurement.edge.tests import tenders, auctions, contracts, plans, health, spore
 
 
 def suite():
