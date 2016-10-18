@@ -29,6 +29,7 @@ class EdgeDataBridge(object):
         self.config = config
         self.api_host = self.config_get('tenders_api_server')
         self.api_version = self.config_get('tenders_api_version')
+        self.retrievers_params = self.config_get('retrievers_params')
 
         self.client = TendersClient(host_url=self.api_host,
             api_version=self.api_version, key=''
@@ -45,9 +46,9 @@ class EdgeDataBridge(object):
         return self.config.get('main').get(name)
 
     def get_teders_list(self):
-        for item in get_tenders(host=self.api_host,
-                                version=self.api_version,
-                                key='', extra_params={'mode': '_all_'}):
+        for item in get_tenders(host=self.api_host, version=self.api_version,
+                                key='', extra_params={'mode': '_all_'},
+                                retrievers_params=self.retrievers_params):
             yield (item["id"], item["dateModified"])
 
     def save_tender_in_db(self, tender_id, date_modified):
