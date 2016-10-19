@@ -13,9 +13,11 @@ import os
 import argparse
 from yaml import load
 from urlparse import urljoin
-from couchdb import Database, Session
+from couchdb import Database, Session, ResourceNotFound
 from openprocurement_client.sync import get_tenders
 from openprocurement_client.client import TendersClient
+import errno
+from socket import error
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,18 @@ class EdgeDataBridge(object):
         )
         self.db = Database(self.couch_url,
                            session=Session(retry_delays=range(10)))
+        try:
+            self.db.info()
+        except ResourceNotFound:
+            error_message = "Database with name '" + self.config_get('public_db') + "' doesn\'t exist"
+            raise ResourceNotFound(error_message)
+        except error as e:
+            if e.errno == errno.ECONNREFUSED:
+                raise e
+        except AttributeError as e:
+            raise ResourceNotFound("Missed 'couch_url' in config or empty")
+        except KeyError as e:
+            raise KeyError('\'public_db\' name is missed or empty in config')
 
     def config_get(self, name):
         return self.config.get('main').get(name)
