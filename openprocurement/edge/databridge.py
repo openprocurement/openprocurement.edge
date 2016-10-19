@@ -18,9 +18,12 @@ from openprocurement_client.sync import get_tenders
 from openprocurement_client.client import TendersClient
 import errno
 from socket import error
+from requests.exceptions import ConnectionError, MissingSchema
 
 logger = logging.getLogger(__name__)
 
+class DataBridgeConfigError(Exception):
+    pass
 
 class EdgeDataBridge(object):
 
@@ -31,10 +34,16 @@ class EdgeDataBridge(object):
         self.config = config
         self.api_host = self.config_get('tenders_api_server')
         self.api_version = self.config_get('tenders_api_version')
+        self.retrievers_params = self.config_get('retrievers_params')
 
-        self.client = TendersClient(host_url=self.api_host,
-            api_version=self.api_version, key=''
-        )
+        try:
+            self.client = TendersClient(host_url=self.api_host,
+                api_version=self.api_version, key=''
+            )
+        except MissingSchema:
+            raise DataBridgeConfigError('In config dictionary empty or missing \'tenders_api_server\'')
+        except ConnectionError as e:
+            raise e
 
         self.couch_url = urljoin(
             self.config_get('couch_url'),
@@ -46,22 +55,27 @@ class EdgeDataBridge(object):
             self.db.info()
         except ResourceNotFound:
             error_message = "Database with name '" + self.config_get('public_db') + "' doesn\'t exist"
-            raise ResourceNotFound(error_message)
+            raise DataBridgeConfigError(error_message)
         except error as e:
             if e.errno == errno.ECONNREFUSED:
-                raise e
+                raise DataBridgeConfigError("Connection refused: 'couch_url' is invalid in config dictionary")
         except AttributeError as e:
-            raise ResourceNotFound("Missed 'couch_url' in config or empty")
+            raise DataBridgeConfigError('\'couch_url\' is missed or empty in config dictionary.')
         except KeyError as e:
-            raise KeyError('\'public_db\' name is missed or empty in config')
+            if e.message == 'db_name':
+                raise DataBridgeConfigError('\'public_db\' name is missed or empty in config dictionary')
 
     def config_get(self, name):
-        return self.config.get('main').get(name)
+        try:
+            return self.config.get('main').get(name)
+        except AttributeError as e:
+            raise DataBridgeConfigError('In config dictionary missed section \'main\'')
+
 
     def get_teders_list(self):
-        for item in get_tenders(host=self.api_host,
-                                version=self.api_version,
-                                key='', extra_params={'mode': '_all_'}):
+        for item in get_tenders(host=self.api_host, version=self.api_version,
+                                key='', extra_params={'mode': '_all_'},
+                                retrievers_params=self.retrievers_params):
             yield (item["id"], item["dateModified"])
 
     def save_tender_in_db(self, tender_id, date_modified):
