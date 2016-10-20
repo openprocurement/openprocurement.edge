@@ -26,7 +26,8 @@ requires = [
 test_requires = requires + [
     'webtest',
     'python-coveralls',
-    'nose'
+    'nose',
+    'mock'
 ]
 
 entry_points = {

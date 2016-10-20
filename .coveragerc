@@ -1,0 +1,5 @@
+[report]
+exclude_lines =
+    def main()
+    if __name__ == "__main__":
+show_missing = True
