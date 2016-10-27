@@ -10,7 +10,7 @@ from couchdb.http import Unauthorized, extract_credentials
 from logging import getLogger
 from openprocurement.api.auth import AuthenticationPolicy, authenticated_role, check_accreditation
 from openprocurement.api.design import sync_design
-from openprocurement.api.utils import forbidden, add_logging_context, extract_tender, request_params, set_renderer, beforerender, route_prefix, set_logging_context
+from openprocurement.api.utils import forbidden, add_logging_context, extract_tender, request_params, set_renderer, beforerender, ROUTE_PREFIX, set_logging_context
 from openprocurement.edge.utils import extract_tender, extract_auction, extract_contract, extract_plan
 try:
     import openprocurement.auctions.core as auctions_core
@@ -73,7 +73,7 @@ def main(global_config, **settings):
         settings=settings,
         authentication_policy=AuthenticationPolicy(settings['auth.file'], __name__),
         authorization_policy=AuthorizationPolicy(),
-        route_prefix=route_prefix(settings),
+        route_prefix=ROUTE_PREFIX,
     )
     config.include('pyramid_exclog')
     config.include("cornice")
