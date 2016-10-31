@@ -117,59 +117,11 @@ def main(global_config, **settings):
         except Unauthorized:
             server = Server(extract_credentials(settings.get('couchdb.url'))[0])
     config.registry.couchdb_server = server
-    if 'couchdb.admin_url' in settings and server.resource.credentials:
-        aserver = Server(settings.get('couchdb.admin_url'), session=Session(retry_delays=range(10)))
-        config.registry.admin_couchdb_server = aserver
-        users_db = aserver['_users']
-        if SECURITY != users_db.security:
-            LOGGER.info("Updating users db security", extra={'MESSAGE_ID': 'update_users_security'})
-            users_db.security = SECURITY
-        username, password = server.resource.credentials
-        user_doc = users_db.get('org.couchdb.user:{}'.format(username), {'_id': 'org.couchdb.user:{}'.format(username)})
-        if not user_doc.get('derived_key', '') or PBKDF2(password, user_doc.get('salt', ''), user_doc.get('iterations', 10)).hexread(int(len(user_doc.get('derived_key', '')) / 2)) != user_doc.get('derived_key', ''):
-            user_doc.update({
-                "name": username,
-                "roles": [],
-                "type": "user",
-                "password": password
-            })
-            LOGGER.info("Updating edge db main user", extra={'MESSAGE_ID': 'update_edge_main_user'})
-            users_db.save(user_doc)
-        security_users = [username, ]
-        if 'couchdb.reader_username' in settings and 'couchdb.reader_password' in settings:
-            reader_username = settings.get('couchdb.reader_username')
-            reader = users_db.get('org.couchdb.user:{}'.format(reader_username), {'_id': 'org.couchdb.user:{}'.format(reader_username)})
-            if not reader.get('derived_key', '') or PBKDF2(settings.get('couchdb.reader_password'), reader.get('salt', ''), reader.get('iterations', 10)).hexread(int(len(reader.get('derived_key', '')) / 2)) != reader.get('derived_key', ''):
-                reader.update({
-                    "name": reader_username,
-                    "roles": ['reader'],
-                    "type": "user",
-                    "password": settings.get('couchdb.reader_password')
-                })
-                LOGGER.info("Updating edge db reader user", extra={'MESSAGE_ID': 'update_edge_reader_user'})
-                users_db.save(reader)
-            security_users.append(reader_username)
-        if db_name not in aserver:
-            aserver.create(db_name)
-        db = aserver[db_name]
-        SECURITY[u'members'][u'names'] = security_users
-        if SECURITY != db.security:
-            LOGGER.info("Updating edge db security", extra={'MESSAGE_ID': 'update_edge_security'})
-            db.security = SECURITY
-        auth_doc = db.get(VALIDATE_DOC_ID, {'_id': VALIDATE_DOC_ID})
-        if auth_doc.get('validate_doc_update') != VALIDATE_DOC_UPDATE % username:
-            auth_doc['validate_doc_update'] = VALIDATE_DOC_UPDATE % username
-            LOGGER.info("Updating edge db validate doc", extra={'MESSAGE_ID': 'update_edge_validate_doc'})
-            db.save(auth_doc)
-        # sync couchdb views
-        sync_design(db)
-        db = server[db_name]
-    else:
-        if db_name not in server:
-            server.create(db_name)
-        db = server[db_name]
-        # sync couchdb views
-        sync_design(db)
+    if db_name not in server:
+        server.create(db_name)
+    db = server[db_name]
+    # sync couchdb views
+    sync_design(db)
     config.registry.db = db
 
     config.registry.server_id = settings.get('id', '')
