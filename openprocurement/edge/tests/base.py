@@ -105,7 +105,7 @@ class TenderBaseWebTest(BaseWebTest):
             document['dateModified'] = get_now().isoformat()
             data['documents'] = [document]
         self.db.save(data)
-        data = self.db[data['id']]
+        data = dict(self.db[data['id']])
         del data['_id']
         del data['_rev']
         del data['doc_type']

@@ -286,6 +286,32 @@ class TenderResourceTest(TenderBaseWebTest):
         self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in tenders]))
         self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in tenders]))
 
+    def test_listing_full_tender(self):
+        response = self.app.get('/tenders?opt_fields=_all_')
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(len(response.json['data']), 0)
+
+        tenders = []
+        data = test_tender_data.copy()
+
+        for i in range(3):
+            tenders.append(self.create_tender(data))
+
+        ids = ','.join([i['id'] for i in tenders])
+
+        while True:
+            response = self.app.get('/tenders?opt_fields=_all_')
+            self.assertTrue(ids.startswith(','.join([i['id'] for i in response.json['data']])))
+            if len(response.json['data']) == 3:
+                break
+
+        self.assertEqual(len(response.json['data']), 3)
+        self.assertEqual(set(response.json['data'][0]), set(tenders[0].keys()))
+        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in tenders]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in tenders]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in tenders]))
+
+
     def test_get_tender(self):
         tender = self.create_tender()
 

@@ -142,10 +142,12 @@ class TendersResource(APIResource):
                     (dict([(i, j) for i, j in x.value.items() + [('id', x.id)] if i in view_fields]), x.key)
                     for x in view()
                 ]
-            elif fields:
-                self.LOGGER.info('Used custom fields for tenders list: {}'.format(','.join(sorted(fields))),
-                            extra=context_unpack(self.request, {'MESSAGE_ID': 'tender_list_custom'}))
-
+            elif '_all_' in fields:
+                results = [
+                    (dict([(k, j) for k, j in i[u'doc'].items() if (k != 'doc_type' and not k.startswith('_'))]), i.key)
+                    for i in view(include_docs=True)
+                ]
+            else:
                 results = [
                     (dict([(k, j) for k, j in i[u'doc'].items() if k in view_fields]), i.key)
                     for i in view(include_docs=True)
