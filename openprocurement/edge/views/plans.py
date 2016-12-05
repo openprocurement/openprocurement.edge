@@ -4,41 +4,35 @@ from openprocurement.api.utils import (
     context_unpack,
     decrypt,
     encrypt,
-    json_view,
-
     APIResource,
+    json_view
 )
-from openprocurement.edge.utils import planningresource
+from openprocurement.edge.utils import planningresource, clean_up_doc
 
-try:
-    import openprocurement.planning.api as planning
-except ImportError:
-     planning = None
 
-if planning:
-    from openprocurement.planning.api.design import (
-        FIELDS,
-        plans_by_dateModified_view,
-        plans_real_by_dateModified_view,
-        plans_test_by_dateModified_view,
-        plans_by_local_seq_view,
-        plans_real_by_local_seq_view,
-        plans_test_by_local_seq_view,
-    )
-    VIEW_MAP = {
-        u'': plans_real_by_dateModified_view,
-        u'test': plans_test_by_dateModified_view,
-        u'_all_': plans_by_dateModified_view,
-    }
-    CHANGES_VIEW_MAP = {
-        u'': plans_real_by_local_seq_view,
-        u'test': plans_test_by_local_seq_view,
-        u'_all_': plans_by_local_seq_view,
-    }
-    FEED = {
-        u'dateModified': VIEW_MAP,
-        u'changes': CHANGES_VIEW_MAP,
-    }
+from openprocurement.planning.api.design import (
+    FIELDS,
+    plans_by_dateModified_view,
+    plans_real_by_dateModified_view,
+    plans_test_by_dateModified_view,
+    plans_by_local_seq_view,
+    plans_real_by_local_seq_view,
+    plans_test_by_local_seq_view,
+)
+VIEW_MAP = {
+    u'': plans_real_by_dateModified_view,
+    u'test': plans_test_by_dateModified_view,
+    u'_all_': plans_by_dateModified_view,
+}
+CHANGES_VIEW_MAP = {
+    u'': plans_real_by_local_seq_view,
+    u'test': plans_test_by_local_seq_view,
+    u'_all_': plans_by_local_seq_view,
+}
+FEED = {
+    u'dateModified': VIEW_MAP,
+    u'changes': CHANGES_VIEW_MAP,
+}
 
 
 @planningresource(name='Plans',
@@ -51,7 +45,7 @@ class PlansResource(APIResource):
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_plan')
+    @json_view()
     def get(self):
         """Plans List
 
@@ -195,11 +189,10 @@ class PlansResource(APIResource):
             description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
 class PlanResource(APIResource):
 
-    @json_view(permission='view_plan')
+    @json_view()
     def get(self):
-        del self.request.validated['plan'].__parent__
-        del self.request.validated['plan'].rev
-        return {'data': self.request.validated['plan']}
+        plan = clean_up_doc(self.request.validated['plan'])
+        return {'data': plan}
 
 
 @planningresource(name='Plan Items',
@@ -207,6 +200,6 @@ class PlanResource(APIResource):
             description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
 class PlanItemsResource(APIResource):
 
-    @json_view(permission='view_plan')
+    @json_view()
     def get(self):
         return {'data': self.request.validated['item']}

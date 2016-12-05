@@ -7,9 +7,6 @@ from datetime import datetime, timedelta
 from openprocurement.api.models import get_now
 from uuid import uuid4
 
-
-from openprocurement.api.models import SANDBOX_MODE
-from openprocurement.api.utils import VERSION
 from openprocurement.api.design import sync_design
 from openprocurement.api.tests.base import BaseWebTest, test_tender_data, test_bids, test_organization, test_lots
 
@@ -39,6 +36,33 @@ test_auction_bids = deepcopy(test_bids)
 for bid in test_auction_bids:
     bid['value']['amount'] = bid['value']['amount'] * bid['value']['amount']
 
+VERSION = '0'
+ROUTE_PREFIX = '/api/{}'.format(VERSION)
+
+class PrefixedRequestClass(webtest.app.TestRequest):
+
+    @classmethod
+    def blank(cls, path, *args, **kwargs):
+        path = '/api/%s%s' % (VERSION, path)
+        return webtest.app.TestRequest.blank(path, *args, **kwargs)
+
+
+class BaseWebTest(BaseWebTest):
+
+    """Base Web Test to test openprocurement.api.
+
+    It setups the database before each test and delete it after.
+    """
+
+    relative_to = os.path.dirname(__file__)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = webtest.TestApp("config:tests.ini", relative_to=cls.relative_to)
+        cls.app.RequestClass = PrefixedRequestClass
+        cls.couchdb_server = cls.app.app.registry.couchdb_server
+        cls.db = cls.app.app.registry.db
+        cls.db_name = cls.db.name
 
 class TenderBaseWebTest(BaseWebTest):
     initial_data = test_tender_data
@@ -48,8 +72,6 @@ class TenderBaseWebTest(BaseWebTest):
     initial_document = test_document
     initial_award_complaint = test_complaint
     initial_award_complaint_document = test_document
-
-    relative_to = os.path.dirname(__file__)
 
     def create_tender(self, initial_data=initial_data):
         data = deepcopy(initial_data)
@@ -119,8 +141,6 @@ class AuctionBaseWebTest(BaseWebTest):
     initial_award_document = test_document
     initial_document = test_document
 
-    relative_to = os.path.dirname(__file__)
-
     def create_auction(self, initial_data=initial_data):
         data = deepcopy(initial_data)
         data['_id'] = data['id'] = uuid4().hex
@@ -160,7 +180,6 @@ class ContractBaseWebTest(BaseWebTest):
     initial_data = test_contract_data
     initial_document = test_document
 
-    relative_to = os.path.dirname(__file__)
 
     def create_contract(self, initial_data=initial_data):
         data = deepcopy(initial_data)
@@ -185,8 +204,6 @@ class ContractBaseWebTest(BaseWebTest):
 class PlanBaseWebTest(BaseWebTest):
     initial_data = test_plan_data
     initial_document = test_document
-
-    relative_to = os.path.dirname(__file__)
 
     def create_plan(self, initial_data=initial_data):
         data = deepcopy(initial_data)

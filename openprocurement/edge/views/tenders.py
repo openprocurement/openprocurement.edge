@@ -10,16 +10,8 @@ from openprocurement.api.design import (
     tenders_test_by_local_seq_view,
 )
 
-from openprocurement.api.utils import (
-    context_unpack,
-    decrypt,
-    encrypt,
-    json_view,
-    tender_serialize,
-    APIResource,
-)
-from openprocurement.edge.utils import opresource
-
+from openprocurement.edge.utils import opresource, clean_up_doc
+from openprocurement.api.utils import context_unpack, decrypt, encrypt, json_view, APIResource
 
 VIEW_MAP = {
     u'': tenders_real_by_dateModified_view,
@@ -47,7 +39,7 @@ class TendersResource(APIResource):
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_tender')
+    @json_view()
     def get(self):
         """Tenders List
 
@@ -193,11 +185,10 @@ class TendersResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
 class TenderResource(APIResource):
 
-    @json_view(permission='view_tender')
+    @json_view()
     def get(self):
-        del self.request.validated['tender'].__parent__
-        del self.request.validated['tender'].rev
-        return {'data': self.request.validated['tender']}
+        tender = clean_up_doc(self.request.validated['tender'])
+        return {'data': tender}
 
 
 @opresource(name='Tender Items',
@@ -205,6 +196,6 @@ class TenderResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
 class TenderItemsResource(APIResource):
 
-    @json_view(permission='view_tender')
+    @json_view()
     def get(self):
         return {'data': self.request.validated['item']}

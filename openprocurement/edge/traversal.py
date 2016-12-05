@@ -32,7 +32,7 @@ def get_item(request, data):
                     document['previousVersions'] = [{'url':i['url'], 'dateModified':i['dateModified']} for i in items if i.url != document.url]
                     items[0] = document
                 if not items:
-                    from openprocurement.api.utils import error_handler
+                    from openprocurement.edge.utils import error_handler
                     request.errors.add('url', '{}_id'.format(request.matchdict['items'][index - 1][:-1]), 'Not Found')
                     request.errors.status = 404
                     raise error_handler(request.errors)
@@ -49,11 +49,8 @@ def tender_factory(request):
         return root
     request.validated['tender_id'] = request.matchdict['tender_id']
     tender = request.tender
-    del tender._id
-    del tender.doc_type
     tender.__parent__ = root
     request.validated['tender'] = request.validated['db_doc'] = tender
-    request.validated['tender'].rev = tender.pop('_rev')
     request.validated['tender_status'] = tender.status
     request.validated['item'] = get_item(request, tender)
     request.validated['id'] = request.matchdict['tender_id']
@@ -67,11 +64,8 @@ def auction_factory(request):
         return root
     request.validated['auction_id'] = request.matchdict['auction_id']
     auction = request.auction
-    del auction._id
-    del auction.doc_type
     auction.__parent__ = root
     request.validated['auction'] = request.validated['db_doc'] = auction
-    request.validated['auction'].rev = auction.pop('_rev')
     request.validated['auction_status'] = auction.status
     request.validated['item'] = get_item(request, auction)
     request.validated['id'] = request.matchdict['auction_id']
@@ -85,11 +79,8 @@ def contract_factory(request):
         return root
     request.validated['contract_id'] = request.matchdict['contract_id']
     contract = request.contract
-    del contract._id
-    del contract.doc_type
     contract.__parent__ = root
     request.validated['contract'] = request.validated['db_doc'] = contract
-    request.validated['contract'].rev = contract.pop('_rev')
     request.validated['contract_status'] = contract.status
     request.validated['item'] = get_item(request, contract)
     request.validated['id'] = request.matchdict['contract_id']
@@ -103,11 +94,8 @@ def plan_factory(request):
         return root
     request.validated['plan_id'] = request.matchdict['plan_id']
     plan = request.plan
-    del plan._id
-    del plan.doc_type
     plan.__parent__ = root
     request.validated['plan'] = request.validated['db_doc'] = plan
-    request.validated['plan'].rev = plan.pop('_rev')
     request.validated['plan_status'] = plan.status
     request.validated['item'] = get_item(request, plan)
     request.validated['id'] = request.matchdict['plan_id']

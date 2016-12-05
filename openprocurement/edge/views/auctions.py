@@ -1,45 +1,38 @@
 # -*- coding: utf-8 -*-
-
 from functools import partial
 from openprocurement.api.models import get_now
 from openprocurement.api.utils import (
     context_unpack,
     decrypt,
     encrypt,
-    json_view,
     APIResource,
+    json_view
 )
-from openprocurement.edge.utils import eaopresource
+from openprocurement.edge.utils import eaopresource, clean_up_doc
 
-try:
-    import openprocurement.auctions.core as auctions_core
-except:
-    auctions_core = None
-
-if auctions_core:
-    from openprocurement.auctions.core.design import (
-        FIELDS,
-        auctions_by_dateModified_view,
-        auctions_real_by_dateModified_view,
-        auctions_test_by_dateModified_view,
-        auctions_by_local_seq_view,
-        auctions_real_by_local_seq_view,
-        auctions_test_by_local_seq_view,
-    )
-    VIEW_MAP = {
-        u'': auctions_real_by_dateModified_view,
-        u'test': auctions_test_by_dateModified_view,
-        u'_all_': auctions_by_dateModified_view,
-    }
-    CHANGES_VIEW_MAP = {
-        u'': auctions_real_by_local_seq_view,
-        u'test': auctions_test_by_local_seq_view,
-        u'_all_': auctions_by_local_seq_view,
-    }
-    FEED = {
-        u'dateModified': VIEW_MAP,
-        u'changes': CHANGES_VIEW_MAP,
-    }
+from openprocurement.auctions.core.design import (
+    FIELDS,
+    auctions_by_dateModified_view,
+    auctions_real_by_dateModified_view,
+    auctions_test_by_dateModified_view,
+    auctions_by_local_seq_view,
+    auctions_real_by_local_seq_view,
+    auctions_test_by_local_seq_view,
+)
+VIEW_MAP = {
+    u'': auctions_real_by_dateModified_view,
+    u'test': auctions_test_by_dateModified_view,
+    u'_all_': auctions_by_dateModified_view,
+}
+CHANGES_VIEW_MAP = {
+    u'': auctions_real_by_local_seq_view,
+    u'test': auctions_test_by_local_seq_view,
+    u'_all_': auctions_by_local_seq_view,
+}
+FEED = {
+    u'dateModified': VIEW_MAP,
+    u'changes': CHANGES_VIEW_MAP,
+}
 
 
 @eaopresource(name='Auctions',
@@ -52,7 +45,7 @@ class AuctionsResource(APIResource):
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_auction')
+    @json_view()
     def get(self):
         """Auctions List
 
@@ -196,11 +189,10 @@ class AuctionsResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
 class AuctionResource(APIResource):
 
-        @json_view(permission='view_auction')
-        def get(self):
-            del self.request.validated['auction'].__parent__
-            del self.request.validated['auction'].rev
-            return {'data': self.request.validated['auction']}
+    @json_view()
+    def get(self):
+        auction = clean_up_doc(self.request.validated['auction'])
+        return {'data': auction}
 
 
 @eaopresource(name='Auction Items',
@@ -208,6 +200,6 @@ class AuctionResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
 class AuctionItemsResource(APIResource):
 
-    @json_view(permission='view_auction')
+    @json_view()
     def get(self):
         return {'data': self.request.validated['item']}

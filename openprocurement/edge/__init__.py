@@ -8,10 +8,11 @@ import os
 from couchdb import Server as CouchdbServer, Session
 from couchdb.http import Unauthorized, extract_credentials
 from logging import getLogger
-from openprocurement.api.auth import AuthenticationPolicy, authenticated_role, check_accreditation
+from openprocurement.edge.utils import extract_tender, extract_auction, extract_contract, extract_plan, add_logging_context, set_logging_context
+
 from openprocurement.api.design import sync_design
-from openprocurement.api.utils import forbidden, add_logging_context, extract_tender, request_params, set_renderer, beforerender, ROUTE_PREFIX, set_logging_context
-from openprocurement.edge.utils import extract_tender, extract_auction, extract_contract, extract_plan
+from openprocurement.api.utils import request_params, set_renderer, beforerender
+
 try:
     import openprocurement.auctions.core as auctions_core
     from openprocurement.auctions.core.design import add_design as add_auction_design
@@ -27,15 +28,14 @@ try:
     from openprocurement.planning.api.design import add_design as add_plan_design
 except ImportError:
      planning = None
+
 from pbkdf2 import PBKDF2
-from pyramid.authorization import ACLAuthorizationPolicy as AuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.events import NewRequest, BeforeRender, ContextFound
 from pyramid.renderers import JSON, JSONP
 from pyramid.settings import asbool
 
 LOGGER = getLogger("{}.init".format(__name__))
-SECURITY = {u'admins': {u'names': [], u'roles': ['_admin']}, u'members': {u'names': [], u'roles': ['_admin']}}
 VALIDATE_DOC_ID = '_design/_auth'
 VALIDATE_DOC_UPDATE = """function(newDoc, oldDoc, userCtx){
     if(newDoc._deleted && newDoc.tenderID) {
@@ -68,20 +68,16 @@ class Server(CouchdbServer):
 
 
 def main(global_config, **settings):
+    version = settings.get('api_version')
+    route_prefix = '/api/{}'.format(version)
     config = Configurator(
         autocommit=True,
         settings=settings,
-        authentication_policy=AuthenticationPolicy(settings['auth.file'], __name__),
-        authorization_policy=AuthorizationPolicy(),
-        route_prefix=ROUTE_PREFIX,
+        route_prefix=route_prefix,
     )
     config.include('pyramid_exclog')
     config.include("cornice")
-    config.add_forbidden_view(forbidden)
     config.add_request_method(request_params, 'params', reify=True)
-    config.add_request_method(authenticated_role, reify=True)
-    config.add_request_method(extract_tender, 'tender', reify=True)
-    config.add_request_method(check_accreditation)
     config.add_renderer('prettyjson', JSON(indent=4))
     config.add_renderer('jsonp', JSONP(param_name='opt_jsonp'))
     config.add_renderer('prettyjsonp', JSONP(indent=4, param_name='opt_jsonp'))
@@ -91,19 +87,24 @@ def main(global_config, **settings):
     config.add_subscriber(beforerender, BeforeRender)
     config.scan("openprocurement.edge.views.spore")
     config.scan("openprocurement.edge.views.health")
-    config.scan("openprocurement.edge.views.tenders")
 
-    if auctions_core:
+    resources = settings.get('resources') and settings['resources'].split(',')
+
+    if 'tenders' in resources:
+        config.scan("openprocurement.edge.views.tenders")
+        config.add_request_method(extract_tender, 'tender', reify=True)
+
+    if 'auctions' in resources and auctions_core:
         config.add_request_method(extract_auction, 'auction', reify=True)
         config.scan("openprocurement.edge.views.auctions")
         add_auction_design()
 
-    if contracting:
+    if 'contracts' in resources and contracting:
         config.add_request_method(extract_contract, 'contract', reify=True)
         config.scan("openprocurement.edge.views.contracts")
         add_contract_design()
 
-    if planning:
+    if 'plans' in resources and planning:
         config.add_request_method(extract_plan, 'plan', reify=True)
         config.scan("openprocurement.edge.views.plans")
         add_plan_design()
@@ -126,5 +127,6 @@ def main(global_config, **settings):
 
     config.registry.server_id = settings.get('id', '')
     config.registry.health_threshold = float(settings.get('health_threshold', 99))
+    config.registry.api_version = version
     config.registry.update_after = asbool(settings.get('update_after', True))
     return config.make_wsgi_app()

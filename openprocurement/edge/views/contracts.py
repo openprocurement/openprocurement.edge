@@ -4,44 +4,37 @@ from openprocurement.api.utils import (
     context_unpack,
     decrypt,
     encrypt,
-    json_view,
-
     APIResource,
+    json_view
 )
-from openprocurement.edge.utils import contractingresource
+from openprocurement.edge.utils import contractingresource, clean_up_doc
 
-try:
-    import openprocurement.contracting.api as contracting
-except ImportError:
-     contracting = None
+from openprocurement.contracting.api.design import (
+    FIELDS,
+    contracts_by_dateModified_view,
+    contracts_real_by_dateModified_view,
+    contracts_test_by_dateModified_view,
+    contracts_by_local_seq_view,
+    contracts_real_by_local_seq_view,
+    contracts_test_by_local_seq_view,
+)
 
-if contracting:
-    from openprocurement.contracting.api.design import (
-        FIELDS,
-        contracts_by_dateModified_view,
-        contracts_real_by_dateModified_view,
-        contracts_test_by_dateModified_view,
-        contracts_by_local_seq_view,
-        contracts_real_by_local_seq_view,
-        contracts_test_by_local_seq_view,
-    )
+VIEW_MAP = {
+    u'': contracts_real_by_dateModified_view,
+    u'test': contracts_test_by_dateModified_view,
+    u'_all_': contracts_by_dateModified_view,
+}
 
-    VIEW_MAP = {
-        u'': contracts_real_by_dateModified_view,
-        u'test': contracts_test_by_dateModified_view,
-        u'_all_': contracts_by_dateModified_view,
-    }
+CHANGES_VIEW_MAP = {
+    u'': contracts_real_by_local_seq_view,
+    u'test': contracts_test_by_local_seq_view,
+    u'_all_': contracts_by_local_seq_view,
+}
 
-    CHANGES_VIEW_MAP = {
-        u'': contracts_real_by_local_seq_view,
-        u'test': contracts_test_by_local_seq_view,
-        u'_all_': contracts_by_local_seq_view,
-    }
-
-    FEED = {
-        u'dateModified': VIEW_MAP,
-        u'changes': CHANGES_VIEW_MAP,
-    }
+FEED = {
+    u'dateModified': VIEW_MAP,
+    u'changes': CHANGES_VIEW_MAP,
+}
 
 
 @contractingresource(name='Contracts',
@@ -54,7 +47,7 @@ class ContractsResource(APIResource):
         self.server = request.registry.couchdb_server
         self.update_after = request.registry.update_after
 
-    @json_view(permission='view_contract')
+    @json_view()
     def get(self):
         """Contracts List
 
@@ -198,11 +191,10 @@ class ContractsResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
 class ContractResource(APIResource):
 
-    @json_view(permission='view_contract')
+    @json_view()
     def get(self):
-        del self.request.validated['contract'].__parent__
-        del self.request.validated['contract'].rev
-        return {'data': self.request.validated['contract']}
+        contract = clean_up_doc(self.request.validated['contract'])
+        return {'data': contract}
 
 
 @contractingresource(name='Contract Items',
@@ -210,6 +202,6 @@ class ContractResource(APIResource):
             description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
 class ContractItemsResource(APIResource):
 
-    @json_view(permission='view_contract')
+    @json_view()
     def get(self):
         return {'data': self.request.validated['item']}

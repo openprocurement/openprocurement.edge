@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from openprocurement.api.tests.base import BaseWebTest
+from openprocurement.edge.tests.base import BaseWebTest
 
 
 class HealthTest(BaseWebTest):

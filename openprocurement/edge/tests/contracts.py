@@ -3,9 +3,8 @@ import unittest
 from uuid import uuid4
 from copy import deepcopy
 
-from openprocurement.api import ROUTE_PREFIX
 from openprocurement.api.models import get_now
-from openprocurement.edge.tests.base import ContractBaseWebTest, test_contract_data, test_document
+from openprocurement.edge.tests.base import ContractBaseWebTest, test_contract_data, test_document, ROUTE_PREFIX
 
 @unittest.skipUnless(test_contract_data, "Contracts is not reachable")
 class ContractResourceTest(ContractBaseWebTest):
