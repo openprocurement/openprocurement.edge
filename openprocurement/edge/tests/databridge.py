@@ -10,7 +10,9 @@ import datetime
 import io
 import logging
 from requests.exceptions import ConnectionError
-from couchdb import Database, Session
+from couchdb import Server, Database, Session
+from gevent import sleep
+from socket import error
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
@@ -23,7 +25,23 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'tenders_api_version': "0",
             'public_tenders_api_server': 'https://lb.api-sandbox.openprocurement.org',
             'couch_url': 'http://localhost:5984',
-            'public_db': 'public_db'
+            'public_db': 'test_db',
+            'queue_size': 101,
+            'api_clients_count': 3,
+            'workers_count': 3,
+            'retry_workers_count': 2,
+            'filter_workers_count': 1,
+            'retry_workers_count': 2,
+            'retry_default_timeout': 5,
+            'worker_sleep': 5,
+            'watch_interval': 10,
+            'queue_timeout': 5,
+            'retrievers_params': {
+                'down_requests_sleep': 5,
+                'up_requests_sleep': 1,
+                'up_wait_sleep': 30,
+                'queue_size': 101
+            }
         },
         'version': 1
     }
@@ -36,7 +54,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertIn('public_tenders_api_server', bridge.config['main'])
         self.assertIn('couch_url', bridge.config['main'])
         self.assertIn('public_db', bridge.config['main'])
-        self.assertEqual(self.config['main']['couch_url'] + '/' + self.config['main']['public_db'], bridge.couch_url)
+        self.assertEqual(self.config['main']['couch_url'], bridge.couch_url)
 
         test_config = {}
 
@@ -47,7 +65,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'tenders_api_version': "0",
                 'public_tenders_api_server': 'https://lb.api-sandbox.openprocurement.org',
                 'couch_url': 'http://localhost:5984',
-                'public_db': 'public_db'
+                'public_db': 'test_db',
             },
             'version': 1
         }
@@ -67,53 +85,31 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         with self.assertRaises(DataBridgeConfigError):
             EdgeDataBridge(test_config)
 
-        # Create EdgeDataBridge object with wrong tenders_api_server
-        test_config['main']['tenders_api_server'] = 'https://lb.api-sandbox.openprocurement.or'
-        with self.assertRaises(ConnectionError):
+        # Create EdgeDataBridge object with invalid tenders_api_server
+        test_config['main']['tenders_api_server'] = 'my_server'
+        with self.assertRaises(DataBridgeConfigError):
             EdgeDataBridge(test_config)
 
         test_config['main']['tenders_api_server'] = 'https://lb.api-sandbox.openprocurement.org'
 
-        # Create EdgeDataBridge object without 'couch_url'
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-        with self.assertRaises(KeyError):
-            test_config['main']['couch_url']
-
-        # Create EdgeDataBridge object with empty 'couch_url'
-        test_config['main']['couch_url'] = ''
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-
-        # Create EdgeDataBridge object with wrong 'couch_url'
-        test_config['main']['couch_url'] = 'http://localhost:598'
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-
-        test_config['main']['couch_url'] = 'http://localhost:5984'
-
-        # Create EdgeDataBridge object without 'public_db'
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-        with self.assertRaises(KeyError):
-            test_config['main']['public_db']
-
-        # Create EdgeDataBridge object with empty 'public_db'
-        test_config['main']['public_db'] = ''
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-
-        # Create EdgeDataBridge object with wrong 'public_db'
-        test_config['main']['public_db'] = 'wrong_db'
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-
-        test_config['main']['public_db'] = 'public_db'
+        test_config['main']['public_db'] = 'public'
         test_config['main']['tenders_api_version'] = "0"
         test_config['main']['public_tenders_api_server'] = 'https://lb.api-sandbox.openprocurement.org'
 
+        # Create EdgeDataBridge object with non exist database
+        bridge = EdgeDataBridge(test_config)
+        self.assertEqual(bridge.db.name, test_config['main']['public_db'])
+        server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[test_config['main']['public_db']]
+
+
+        with patch('openprocurement.edge.databridge.Server.create') as mock_create:
+            mock_create.side_effect = error('test error')
+            with self.assertRaises(DataBridgeConfigError) as e:
+                bridge = EdgeDataBridge(test_config)
+                import pdb; pdb.set_trace()
+
         # Create EdgeDataBridge object with deleting config variables step by step
-        del test_config['main']['couch_url']
         bridge = EdgeDataBridge(test_config)
         self.assertEqual(type(bridge), EdgeDataBridge)
         with self.assertRaises(KeyError):
@@ -133,104 +129,87 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         with self.assertRaises(KeyError):
             test_config['main']['public_tenders_api_server']
         del bridge
+        server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[test_config['main']['public_db']]
 
-        del test_config['main']['public_db']
-        with self.assertRaises(DataBridgeConfigError):
-            EdgeDataBridge(test_config)
-        with self.assertRaises(KeyError):
-            test_config['main']['public_db']
-
-
-    def test_save_tender_in_db(self):
-        log_string = io.BytesIO()
-        stream_handler = logging.StreamHandler(log_string)
-        logger.addHandler(stream_handler)
-
+    def test_get_db_activity(self):
+        # Success test
         bridge = EdgeDataBridge(self.config)
-        mock_tender = {'data': test_tender_data}
-        bridge.client.get_tender = MagicMock(return_value=mock_tender)
+        db_info = bridge.get_db_activity()
+        self.assertEqual(db_info['update_seq'], 0)
+        self.assertEqual(db_info['doc_count'], 0)
 
-        # Save tender
+        # Unsuccess test
+        bridge.db = Database('http://localhost:5984/temp_db',
+                             session=Session(retry_delays=range(10)))
+        db_info = bridge.get_db_activity()
+        self.assertEqual(db_info['update_seq'], -1)
+        self.assertEqual(db_info['doc_count'], -1)
+        del bridge
+        server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[self.config['main']['public_db']]
 
-        tid = uuid.uuid4().hex
-        t_date_modified = datetime.datetime.utcnow().isoformat()
-        mock_tender['data']['dateModified'] = t_date_modified
-        bridge.save_tender_in_db(tid, t_date_modified)
-        x = log_string.getvalue().split('\n')
-        self.assertEqual(x[1].strip(), 'Save tender ' + tid)
-        tender_in_db = bridge.db.get(tid)
-        self.assertEqual(tender_in_db.id, tid)
-
-        # Tender exist in db and not modified
-        result = bridge.save_tender_in_db(tid, t_date_modified)
-        self.assertEqual(result, None)
-
-        # Update tender
-        t_date_modified = datetime.datetime.utcnow().isoformat()
-        mock_tender['data']['dateModified'] = t_date_modified
-        bridge.save_tender_in_db(tid, t_date_modified)
-        x = log_string.getvalue().split('\n')
-        self.assertEqual(x[2].strip(), 'Update tender ' + tid)
-        updated_tender = bridge.db.get(tid)
-        self.assertEqual(updated_tender['dateModified'], unicode(t_date_modified))
-
-        # Tender not found
-        bridge.client.get_tender = MagicMock(return_value=test_tender_data)
-        bridge.save_tender_in_db(tid, datetime.datetime.utcnow().isoformat())
-        x = log_string.getvalue().split('\n')
-        self.assertEqual(x[3].strip(), 'Tender ' + tid + ' not found')
-        bridge.db.delete(updated_tender)
-
-        # Saving tender with exception
-        bridge.client.get_tender = MagicMock(return_value=mock_tender)
-        bridge.config['main']['couch_url'] = ''
-        bridge.config['main']['public_db'] = ''
-        bridge.db = Database('bridge.couch_url',
-                            session=Session(retry_delays=range(10)))
-        new_mock_tender = mock_tender
-        new_mock_tender['dateModified'] = datetime.datetime.utcnow().isoformat()
-        new_mock_tender['_rev'] = '2-' + uuid.uuid4().hex
-        bridge.db.get = MagicMock(return_value=new_mock_tender)
-        tid = uuid.uuid4().hex
-        bridge.save_tender_in_db(tid, datetime.datetime.utcnow().isoformat())
-        x = log_string.getvalue().split('\n')
-        self.assertEqual(x[5].strip(), 'Saving tender ' + tid + ' fail with error (400, (u\'illegal_database_name\', u"Name: \'bridge.couch_url\'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter."))')
-
-        logger.removeHandler(stream_handler)
-        log_string.close()
-
-    def test_run(self):
-        log_string = io.BytesIO()
-        stream_handler = logging.StreamHandler(log_string)
-        logger.addHandler(stream_handler)
-
+    def test_add_to_retry_queue(self):
         bridge = EdgeDataBridge(self.config)
-        mock_tender = {'data': test_tender_data}
-        bridge.client.get_tender = MagicMock(return_value=mock_tender)
-        tid = uuid.uuid4().hex
-        t_date_modified = datetime.datetime.utcnow().isoformat()
-        mock_tender['data']['dateModified'] = t_date_modified
-        bridge.save_tender_in_db(tid, t_date_modified)
-        bridge.get_teders_list = MagicMock(return_value=[[tid, datetime.datetime.utcnow().isoformat()]])
-        bridge.run()
-        x = log_string.getvalue().split('\n')
-        self.assertEqual(x[2], 'Start Edge Bridge')
-        self.assertEqual(x[3], 'Start data sync...')
-        del_tender = bridge.db.get(tid)
-        bridge.db.delete(del_tender)
+        retry_item = {
+            'id': uuid.uuid4().hex,
+            'dateModified': datetime.datetime.utcnow().isoformat(),
+            'timeout': 1,
+            'retries_count': 2
+        }
+        self.assertEqual(bridge.retry_resource_items_queue.qsize(), 0)
+        bridge.add_to_retry_queue(retry_item)
+        sleep(retry_item['timeout'] * 2)
+        self.assertEqual(bridge.retry_resource_items_queue.qsize(), 1)
+        retry_item_from_queue = bridge.retry_resource_items_queue.get()
+        retry_item['timeout'] = retry_item['timeout'] * 2
+        retry_item['retries_count'] += 1
+        self.assertEqual(retry_item, retry_item_from_queue)
+        retry_item['retries_count'] = 10
+        bridge.add_to_retry_queue(retry_item)
+        self.assertEqual(bridge.retry_resource_items_queue.qsize(), 0)
+        del bridge
+        server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[self.config['main']['public_db']]
 
-        logger.removeHandler(stream_handler)
-        log_string.close()
-
-    @patch('openprocurement.edge.databridge.get_tenders')
-    def test_get_tenders_list(self, mock_get_tenders):
-        tid = uuid.uuid4().hex
-        t_date_modified =  datetime.datetime.utcnow().isoformat()
-        mock_get_tenders.return_value = [{'id': tid, 'dateModified': t_date_modified}]
+    def test_fill_api_clients_queue(self):
         bridge = EdgeDataBridge(self.config)
-        for tender_id, date_modified in bridge.get_teders_list():
-            self.assertEqual(tender_id, tid)
-            self.assertEqual(t_date_modified, date_modified)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 0)
+        bridge.fill_api_clients_queue()
+        self.assertEqual(bridge.api_clients_queue.qsize(), bridge.api_clients_count)
+        server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[self.config['main']['public_db']]
+
+    @patch('openprocurement.edge.databridge.get_resource_items')
+    def test_fill_resource_items_queue(self, mock_get_resource_items):
+        bridge = EdgeDataBridge(self.config)
+        mock_get_resource_items.return_value = [{
+            'id':uuid.uuid4().hex,
+            'dateModified': datetime.datetime.utcnow().isoformat()}]
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
+        bridge.fill_resource_items_queue()
+        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
+        server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[self.config['main']['public_db']]
+
+    def test_gevent_watcher(self):
+        bridge = EdgeDataBridge(self.config)
+        self.assertEqual(bridge.log_dict, {})
+        bridge.gevent_watcher()
+        log_dict = {
+            'resource_items_queue_size': 0,
+            'retry_resource_items_queue_size': 0,
+            'workers_count': 0,
+            'filter_workers_count': 0,
+            'retry_workers_count': 0,
+            'free_api_clients': 0,
+            'write_documents': 0,
+            'update_documents': 0
+        }
+        self.assertEqual(bridge.log_dict, log_dict)
+        del bridge
+        server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[self.config['main']['public_db']]
 
     def test_config_get(self):
         test_config = {
@@ -239,7 +218,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'tenders_api_version': "0",
                 'public_tenders_api_server': 'https://lb.api-sandbox.openprocurement.org',
                 'couch_url': 'http://localhost:5984',
-                'public_db': 'public_db'
+                'public_db': 'test_db'
             },
             'version': 1
         }
@@ -251,6 +230,8 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         del bridge.config['main']['couch_url']
         couch_url_config = bridge.config_get('couch_url')
         self.assertEqual(couch_url_config, None)
+        server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
+        del server[test_config['main']['public_db']]
 
         del bridge.config['main']
         with self.assertRaises(DataBridgeConfigError):
