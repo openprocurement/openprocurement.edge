@@ -12,6 +12,7 @@ from openprocurement.edge.utils import extract_tender, extract_auction, extract_
 
 from openprocurement.api.design import sync_design
 from openprocurement.api.utils import request_params, set_renderer, beforerender
+from openprocurement.edge.utils import push_views
 
 try:
     import openprocurement.auctions.core as auctions_core
@@ -89,25 +90,30 @@ def main(global_config, **settings):
     config.scan("openprocurement.edge.views.health")
 
     resources = settings.get('resources') and settings['resources'].split(',')
-
+    couchapp_path = os.path.dirname(os.path.abspath(__file__)) + '/couch_views'
+    couch_url = settings.get('couchdb.url') + settings.get('couchdb.db_name')
     if 'tenders' in resources:
         config.scan("openprocurement.edge.views.tenders")
         config.add_request_method(extract_tender, 'tender', reify=True)
+        push_views(couchapp_path=couchapp_path+'/tenders', couch_url=couch_url)
 
     if 'auctions' in resources and auctions_core:
         config.add_request_method(extract_auction, 'auction', reify=True)
         config.scan("openprocurement.edge.views.auctions")
         add_auction_design()
+        push_views(couchapp_path=couchapp_path+'/auctions', couch_url=couch_url)
 
     if 'contracts' in resources and contracting:
         config.add_request_method(extract_contract, 'contract', reify=True)
         config.scan("openprocurement.edge.views.contracts")
         add_contract_design()
+        push_views(couchapp_path=couchapp_path+'/contracts', couch_url=couch_url)
 
     if 'plans' in resources and planning:
         config.add_request_method(extract_plan, 'plan', reify=True)
         config.scan("openprocurement.edge.views.plans")
         add_plan_design()
+        push_views(couchapp_path=couchapp_path+'/plans', couch_url=couch_url)
 
     # CouchDB connection
     db_name = os.environ.get('DB_NAME', settings['couchdb.db_name'])
