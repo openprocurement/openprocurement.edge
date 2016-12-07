@@ -96,7 +96,6 @@ def plan_factory(request):
     plan = request.plan
     plan.__parent__ = root
     request.validated['plan'] = request.validated['db_doc'] = plan
-    request.validated['plan_status'] = plan.status
     request.validated['item'] = get_item(request, plan)
     request.validated['id'] = request.matchdict['plan_id']
     return plan
