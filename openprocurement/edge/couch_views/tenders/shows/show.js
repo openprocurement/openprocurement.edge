@@ -89,55 +89,7 @@ function(doc, req) {
       };
     }
 
-
-
-    switch(key) {
-      case "document_id":
-        name = "document_id"
-        break;
-      case "award_id":
-        name = "award_id"
-        break;
-      case "complaint_id":
-        name = "complaint_id"
-        break;
-      case "bid_id":
-        name = "bid_id"
-        break;
-      case "eligibility_document":
-        name = "eligibility_document"
-        break;
-      case "financial_document":
-        name = "financial_document"
-        break;
-      case "qualification_document":
-        name = "qualification_document"
-        break;
-      case "cancellation_id":
-        name = "cancellation_id"
-        break;
-      case "complaint_id":
-        name = "complaint_id"
-        break;
-      case "contract_id":
-        name = "contract_id"
-        break;
-      case "lot_id":
-        name = "lot_id"
-        break;
-      case "qualification_id":
-        name = "qualification_id"
-        break;
-      case "q_complaint_id":
-        name = "q_complaint_id"
-        break;
-      case "question_id":
-        name = "question_id"
-        break;
-      default:
-        name = "tender_id"
-    }
-
+    query.length != 0 ? name = key : name = 'tender_id';
 
 
       return {

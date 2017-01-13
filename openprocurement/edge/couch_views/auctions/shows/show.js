@@ -75,48 +75,21 @@ function(doc, req) {
          headers: {"Content-Type": "text/plain; charset=utf-8"}
        };
      }
+    query.length != 0 ? name = key : name = 'auction_id';
 
-    switch(key) {
-      case "document_id":
-        name = "document_id"
-        break;
-      case "award_id":
-        name = "award_id"
-        break;
-      case "bid_id":
-        name = "bid_id"
-        break;
-      case "cancellation_id":
-        name = "cancellation_id"
-        break;
-      case "complaint_id":
-        name = "complaint_id"
-        break;
-      case "contract_id":
-        name = "contract_id"
-        break;
-      case "lot_id":
-        name = "lot_id"
-        break;
-      case "question_id":
-        name = "question_id"
-        break;
-      default:
-    }
-
-      return {
-        code: 404,
+    return {
+      code: 404,
         json: {
-            "status": "error",
-            "errors":[{
-                "location": "url",
-                "name": name,
-                "description": "Not found"
-            }]
-        }
-      };
+          "status": "error",
+          "errors":[{
+              "location": "url",
+              "name": name,
+              "description": "Not found"
+          }]
+      }
+    };
 
-   }
+  }
       clearFields(data);
 
     return {
