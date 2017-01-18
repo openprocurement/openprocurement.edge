@@ -1,0 +1,1 @@
+function (head, req) { provides('json', function() { var results = []; while (row = getRow()) { results.push({ id: row.id, dateModified: row.key});} send(JSON.stringify(results));});}
