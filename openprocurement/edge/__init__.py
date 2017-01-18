@@ -8,27 +8,34 @@ import os
 from couchdb import Server as CouchdbServer, Session
 from couchdb.http import Unauthorized, extract_credentials
 from logging import getLogger
-from openprocurement.edge.utils import extract_tender, extract_auction, extract_contract, extract_plan, add_logging_context, set_logging_context
+from openprocurement.edge.utils import extract_tender, extract_auction
+from openprocurement.edge.utils import extract_contract, extract_plan
+from openprocurement.edge.utils import add_logging_context, set_logging_context
 
 from openprocurement.api.design import sync_design
 from openprocurement.api.utils import request_params, set_renderer, beforerender
 from openprocurement.edge.utils import push_views
 
+LOGGER = getLogger("{}.init".format(__name__))
+
 try:
     import openprocurement.auctions.core as auctions_core
     from openprocurement.auctions.core.design import add_design as add_auction_design
 except ImportError:
-     auctions_core = None
+    auctions_core = None
+    LOGGER.error('Can\'t import auctions.core')
 try:
     import openprocurement.contracting.api as contracting
     from openprocurement.contracting.api.design import add_design as add_contract_design
 except ImportError:
-     contracting = None
+    contracting = None
+    LOGGER.error('Can\'t import contracting.api')
 try:
     import openprocurement.planning.api as planning
     from openprocurement.planning.api.design import add_design as add_plan_design
 except ImportError:
-     planning = None
+    planning = None
+    LOGGER.error('Can\'t import planning.api')
 
 from pbkdf2 import PBKDF2
 from pyramid.config import Configurator
@@ -36,7 +43,6 @@ from pyramid.events import NewRequest, BeforeRender, ContextFound
 from pyramid.renderers import JSON, JSONP
 from pyramid.settings import asbool
 
-LOGGER = getLogger("{}.init".format(__name__))
 VALIDATE_DOC_ID = '_design/_auth'
 VALIDATE_DOC_UPDATE = """function(newDoc, oldDoc, userCtx){
     if(newDoc._deleted && newDoc.tenderID) {
@@ -96,28 +102,38 @@ def main(global_config, **settings):
         config.scan("openprocurement.edge.views.tenders")
         config.add_request_method(extract_tender, 'tender', reify=True)
         push_views(couchapp_path=couchapp_path+'/tenders', couch_url=couch_url)
+        LOGGER.info('Push couch tenders views successful.')
+        LOGGER.info('Tender resource initialized successful.')
 
     if 'auctions' in resources and auctions_core:
         config.add_request_method(extract_auction, 'auction', reify=True)
         config.scan("openprocurement.edge.views.auctions")
         add_auction_design()
         push_views(couchapp_path=couchapp_path+'/auctions', couch_url=couch_url)
+        LOGGER.info('Push couch auctions views successful.')
+        LOGGER.info('Auction resource initialized successful.')
 
     if 'contracts' in resources and contracting:
         config.add_request_method(extract_contract, 'contract', reify=True)
         config.scan("openprocurement.edge.views.contracts")
         add_contract_design()
-        push_views(couchapp_path=couchapp_path+'/contracts', couch_url=couch_url)
+        push_views(couchapp_path=couchapp_path+'/contracts',
+                   couch_url=couch_url)
+        LOGGER.info('Push couch contracts views successful.')
+        LOGGER.info('Contract resource initialized successful.')
 
     if 'plans' in resources and planning:
         config.add_request_method(extract_plan, 'plan', reify=True)
         config.scan("openprocurement.edge.views.plans")
         add_plan_design()
         push_views(couchapp_path=couchapp_path+'/plans', couch_url=couch_url)
+        LOGGER.info('Push couch plans views successful.')
+        LOGGER.info('Plan resource initialized successful.')
 
     # CouchDB connection
     db_name = os.environ.get('DB_NAME', settings['couchdb.db_name'])
-    server = Server(settings.get('couchdb.url'), session=Session(retry_delays=range(10)))
+    server = Server(settings.get('couchdb.url'),
+                    session=Session(retry_delays=range(10)))
     if 'couchdb.admin_url' not in settings and server.resource.credentials:
         try:
             server.version()

@@ -90,6 +90,7 @@ function(doc, req) {
     };
 
   }
+
       clearFields(data);
 
     return {

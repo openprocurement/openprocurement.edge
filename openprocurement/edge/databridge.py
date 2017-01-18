@@ -296,6 +296,7 @@ class EdgeDataBridge(object):
                                              self.retry_resource_items_queue,
                                              self.log_dict)
                 self.workers_pool.add(w)
+                self.create_api_client()
         if len(self.retry_workers_pool) < self.retry_workers_min:
             for i in xrange(0, self.retry_workers_min - len(self.retry_workers_pool)):
                 self.create_api_client()
@@ -305,6 +306,7 @@ class EdgeDataBridge(object):
                                              self.retry_resource_items_queue,
                                              self.log_dict)
                 self.retry_workers_pool.add(w)
+                self.create_api_client()
 
     def run(self):
         logger.info('Start Edge Bridge',

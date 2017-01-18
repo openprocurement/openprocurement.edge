@@ -91,7 +91,6 @@ function(doc, req) {
 
     query.length != 0 ? name = key : name = 'tender_id';
 
-
       return {
         code: 404,
         json: {
