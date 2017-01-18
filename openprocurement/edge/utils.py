@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from cornice.resource import resource, view
 from cornice.util import json_error
 from functools import partial
@@ -8,6 +9,7 @@ from munch import munchify
 from logging import getLogger
 from pkg_resources import get_distribution
 from json import dumps
+from couchapp.dispatch import dispatch
 
 from openprocurement.api.models import get_now
 from openprocurement.api.utils import update_logging_context, context_unpack
@@ -123,8 +125,20 @@ def extract_contract(request):
 def extract_plan(request):
     return extract_doc(request, 'Plan')
 
+
 def clean_up_doc(doc, service_fields=SERVICE_FIELDS):
     for field in service_fields:
         if field in doc:
             del doc[field]
     return doc
+
+
+def push_views(couchapp_path=None, couch_url=None):
+    if couchapp_path is None or couch_url is None:
+        raise Exception('Can\'t push couchapp. Please check \'couchapp_path\''
+                        ' or \'couch_url\'.')
+    else:
+        if os.path.exists(couchapp_path):
+            dispatch(['push', couchapp_path, couch_url])
+        else:
+            LOGGER.info('Directory {} not exist.'.format(couchapp_path))
