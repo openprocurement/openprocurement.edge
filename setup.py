@@ -32,7 +32,7 @@ test_requires = requires + [
 
 entry_points = {
     'paste.app_factory': [
-        'main = openprocurement.edge:main'
+        'main = openprocurement.edge.main:main'
     ],
     'console_scripts': [
         'edge_data_bridge = openprocurement.edge.databridge:main'

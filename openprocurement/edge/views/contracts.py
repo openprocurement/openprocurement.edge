@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from functools import partial
-from openprocurement.api.utils import (
+from openprocurement.edge.utils import (
     context_unpack,
     decrypt,
     encrypt,
@@ -9,26 +9,26 @@ from openprocurement.api.utils import (
 )
 from openprocurement.edge.utils import contractingresource, clean_up_doc
 
-from openprocurement.contracting.api.design import (
-    FIELDS,
-    contracts_by_dateModified_view,
-    contracts_real_by_dateModified_view,
-    contracts_test_by_dateModified_view,
-    contracts_by_local_seq_view,
-    contracts_real_by_local_seq_view,
-    contracts_test_by_local_seq_view,
+from openprocurement.edge.design import (
+    by_dateModified_view_ViewDefinition,
+    real_by_dateModified_view_ViewDefinition,
+    test_by_dateModified_view_ViewDefinition,
+    by_local_seq_view_ViewDefinition,
+    real_by_local_seq_view_ViewDefinition,
+    test_by_local_seq_view_ViewDefinition,
 )
+from openprocurement.edge.design import CONTRACT_FIELDS as FIELDS
 
 VIEW_MAP = {
-    u'': contracts_real_by_dateModified_view,
-    u'test': contracts_test_by_dateModified_view,
-    u'_all_': contracts_by_dateModified_view,
+    u'': real_by_dateModified_view_ViewDefinition('contracts'),
+    u'test': test_by_dateModified_view_ViewDefinition('contracts'),
+    u'_all_': by_dateModified_view_ViewDefinition('contracts'),
 }
 
 CHANGES_VIEW_MAP = {
-    u'': contracts_real_by_local_seq_view,
-    u'test': contracts_test_by_local_seq_view,
-    u'_all_': contracts_by_local_seq_view,
+    u'': real_by_local_seq_view_ViewDefinition('contracts'),
+    u'test': test_by_local_seq_view_ViewDefinition('contracts'),
+    u'_all_': by_local_seq_view_ViewDefinition('contracts'),
 }
 
 FEED = {
@@ -184,24 +184,3 @@ class ContractsResource(APIResource):
                 "uri": self.request.route_url('Contracts', _query=pparams)
             }
         return data
-
-
-@contractingresource(name='Contract',
-            path='/contracts/{contract_id}',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
-class ContractResource(APIResource):
-
-    @json_view()
-    def get(self):
-        contract = clean_up_doc(self.request.validated['contract'])
-        return {'data': contract}
-
-
-@contractingresource(name='Contract Items',
-            path='/contracts/{contract_id}/*items',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#contract for more info")
-class ContractItemsResource(APIResource):
-
-    @json_view()
-    def get(self):
-        return {'data': self.request.validated['item']}
