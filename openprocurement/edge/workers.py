@@ -6,9 +6,14 @@ import gevent
 from gevent import Greenlet
 from gevent import spawn, sleep, idle
 from gevent.queue import Queue, Empty
+import json
 import logging
 import logging.config
-from openprocurement_client.exceptions import InvalidResponse, RequestFailed
+from openprocurement_client.exceptions import (
+    InvalidResponse,
+    RequestFailed,
+    ResourceNotFound
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +127,20 @@ class ResourceItemWorker(Greenlet):
                 'dateModified': queue_resource_item['dateModified']
             }, status_code=e.status_code)
             self.log_dict['exceptions_count'] += 1
+            return None
+        except ResourceNotFound as e:
+            logger.error('Resource not found: {}'.format(e.message))
+            error_messages = json.loads(e.message)
+            for error in error_messages['errors']:
+                if error['description'] == 'Offset expired/invalid':
+                    api_client_dict['client'].session.cookies.clear()
+                    logger.info('Clear client cookies')
+                    self.add_to_retry_queue({
+                        'id': queue_resource_item['id'],
+                        'dateModified': queue_resource_item['dateModified']
+                    })
+                    break
+            self.api_clients_queue.put(api_client_dict)
             return None
         except Exception as e:
             self.api_clients_queue.put(api_client_dict)

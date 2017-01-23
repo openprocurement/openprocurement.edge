@@ -165,14 +165,13 @@ class EdgeDataBridge(object):
     def config_get(self, name):
         try:
             return self.config.get('main').get(name)
-        except AttributeError as e:
+        except AttributeError:
             raise DataBridgeConfigError('In config dictionary missed section'
                                         ' \'main\'')
 
-
     def create_api_client(self):
         client_user_agent = self.user_agent + '/' + uuid.uuid4().hex
-        timeout = 0
+        timeout = 0.1
         while 1:
             try:
                 api_client = APIClient(host_url=self.api_host,
@@ -188,10 +187,11 @@ class EdgeDataBridge(object):
                 break
             except RequestFailed as e:
                 self.log_dict['exceptions_count'] += 1
-                logger.error('Failed start api_client with status code {}'.format(
-                    e.status_code
+                logger.error(
+                    'Failed start api_client with status code {}'.format(
+                        e.status_code
                 ))
-                timeout += 0.1
+                timeout = timeout * 2
                 sleep(timeout)
 
     def fill_api_clients_queue(self):
