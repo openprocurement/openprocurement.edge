@@ -6,7 +6,6 @@ import os
 from couchdb import Server as CouchdbServer, Session
 from couchdb.http import Unauthorized, extract_credentials
 from logging import getLogger
-from openprocurement.edge.design import sync_design
 from openprocurement.edge.utils import add_logging_context, set_logging_context
 from openprocurement.edge.utils import push_views, beforerender
 from openprocurement.edge.utils import request_params, set_renderer
@@ -32,6 +31,14 @@ VALIDATE_DOC_UPDATE = """function(newDoc, oldDoc, userCtx){
     } else {
         throw({forbidden: 'Only authorized user may edit the database'});
     }
+}"""
+
+
+VALIDATE_BULK_DOCS_ID = '_design/validate_date_modified'
+VALIDATE_BULK_DOCS_UPDATE = """function(newDoc, oldDoc, userCtx) {
+    if (oldDoc && (newDoc.dateModified <= oldDoc.dateModified)) {
+        throw({forbidden: 'New doc with oldest dateModified.' });
+    };
 }"""
 
 
@@ -106,6 +113,11 @@ def main(global_config, **settings):
     if db_name not in server:
         server.create(db_name)
     db = server[db_name]
+    validate_doc = {
+        '_id': VALIDATE_BULK_DOCS_ID,
+        'validate_doc_update': VALIDATE_BULK_DOCS_UPDATE
+    }
+    db.save(validate_doc)
     # sync couchdb views
     # sync_design(db)
     config.registry.db = db

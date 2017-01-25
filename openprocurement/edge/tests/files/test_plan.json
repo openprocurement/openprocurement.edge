@@ -1,0 +1,97 @@
+{
+    "_id": "325ab7811eae49c6aa357e1be296cc6f",
+    "_rev": "1-3c2d409390890f97e0b18687c520a096",
+    "doc_type": "Plan",
+    "documents": [
+        {
+            "hash": "md5:e5fbfd5ec2140d157eed81991c95a469",
+            "format": "application/pkcs7-signature",
+            "url": "https://public.docs-sandbox.openprocurement.org/get/cda6781e5e0848f88c18d402635fb66b?KeyID=1331dc52&Signature=jWFmKgqRBf2ysIGlREPvn2%252BZXWKJUqrl50dwe5nuI9XU1MVrI13fAKN%2FbTzZ3NRyOCkZ8ewgGkAFI4mGjSAOBw%253D%253D",
+            "title": "sign.p7s",
+            "datePublished": "2017-01-03T11:17:40.418843+02:00",
+            "dateModified": "2017-01-03T11:17:40.418868+02:00",
+            "id": "dbc6246ce0914eb4bda3b457bd562eac"
+        },
+        {
+            "hash": "md5:c9fab7cf1273427d9754d17e2e98c6b0",
+            "format": "application/pkcs7-signature",
+            "url": "https://public.docs-sandbox.openprocurement.org/get/64e99ee6ea714f469d1f92ff6b5ba7ba?KeyID=1331dc52&Signature=%252Bwc8C4mccr72Bx4Xl%2FwFbWHN4xjvT5qyDWsR95EYFQ0Oy5zLiUeBQnVkrcn9AyIsoIHe1IGa3GKRUXhbmylsDA%253D%253D",
+            "title": "sign.p7s",
+            "datePublished": "2017-01-03T11:19:54.589336+02:00",
+            "dateModified": "2017-01-03T11:19:54.589362+02:00",
+            "id": "3895c44d56be465880358f564cc1a7c1"
+        }
+    ],
+    "classification": {
+        "scheme": "CPV",
+        "description": "Овочі",
+        "id": "03221000-6"
+    },
+    "items": [
+        {
+            "description": "овочі",
+            "classification": {
+                "scheme": "CPV",
+                "description": "Овочі",
+                "id": "03221000-6"
+            },
+            "additionalClassifications": [
+                {
+                    "scheme": "ДКПП",
+                    "id": "01.13.90",
+                    "description": "Овочі свіжі, н.в.і.у."
+                }
+            ],
+            "deliveryDate": {
+                "endDate": "2017-01-31T08:00:00+00:00"
+            },
+            "id": "d2007384d7d4409fbbde44ef14ea524f",
+            "unit": {
+                "code": "KGM",
+                "name": "кілограми"
+            },
+            "quantity": 121212
+        }
+    ],
+    "id": "325ab7811eae49c6aa357e1be296cc6f",
+    "planID": "UA-P-2017-01-03-000002-2",
+    "budget": {
+        "description": "конкретна назва предмета закупівлі ЗМІНИ",
+        "notes": "вввввввввввввввввввввввввввввв",
+        "currency": "UAH",
+        "amount": 0,
+        "year": 2017,
+        "id": "fccd9b5c16464aaa970f53c987a4f025"
+    },
+    "datePublished": "2017-01-03T11:17:12.848542+02:00",
+    "owner": "accept-online.com.ua",
+    "additionalClassifications": [
+        {
+            "scheme": "ДКПП",
+            "id": "01.13.90",
+            "description": "Овочі свіжі, н.в.і.у."
+        },
+        {
+            "scheme": "КЕКВ",
+            "id": "2000",
+            "description": "Поточні видатки"
+        }
+    ],
+    "procuringEntity": {
+        "identifier": {
+            "scheme": "UA-EDR",
+            "legalName_en": "Sonechko",
+            "id": "11111111",
+            "legalName": "Сонечко"
+        },
+        "name": "Сонечко"
+    },
+    "tender": {
+        "procurementMethod": "open",
+        "procurementMethodType": "aboveThresholdUA.defense",
+        "tenderPeriod": {
+            "startDate": "2017-03-01T08:00:00+00:00"
+        }
+    },
+    "dateModified": "2017-01-03T11:19:54.591225+02:00"
+}

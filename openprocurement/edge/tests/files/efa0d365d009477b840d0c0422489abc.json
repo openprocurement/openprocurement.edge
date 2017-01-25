@@ -1,0 +1,68 @@
+{
+"data": {
+"status": "active",
+"documents": [
+{
+"language": "uk",
+"format": "application/pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/dcd53fd7216940dcab1e27d2fd494779?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fa794e1b59c9242718196a575ee1526d5&KeyID=1331dc52&Signature=98gnIl9ERmJZ3qUopQzAurOpCsM1OX5q3eNkC5w4SGwTqqV8GOfHFcZ7XHnwV8R1xmOCfkxAAdCEKkM9jO3wDw%253D%253D",
+"title": "d-070fe7b4doloreEwbedl.pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T16:21:02.780569+03:00",
+"dateModified": "2016-10-04T16:21:02.780594+03:00",
+"id": "a794e1b59c9242718196a575ee1526d5"
+}
+],
+"eligible": true,
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"complaints": [
+{
+"status": "pending",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"format": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+"url": "https://public.docs-sandbox.openprocurement.org/get/15173afb1a474e36b5dcce5e0c8f7870?Prefix=01f99e1b37714c91a55e5e9f7c5e7fb8%2Fc623089caea44d798a6ce61240e42915&KeyID=1331dc52&Signature=ZhSb5j39G8CWkcwNJUu9Ue6j10KUaszXK2ucwiFmPRtXME%2F9cmiLh0KOKjx6dxqWTKhgADVe%2FavRcPCejITNBA%253D%253D",
+"title": "Microsoft Excel.xlsx",
+"documentOf": "tender",
+"datePublished": "2016-07-21T12:33:17.569079+03:00",
+"dateModified": "2016-07-21T12:33:17.569104+03:00",
+"id": "c623089caea44d798a6ce61240e42915"
+}
+],
+"description": "Скарга на рішення передкваліфікації",
+"title": "Скарга на рішення передкваліфікації",
+"author": {
+"contactPoint": {
+"email": "pbuser2@ukr.net",
+"name": "Стрижак Володимир Сергійович",
+"telephone": "+380636549832"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "1593578912",
+"legalName": "ЗАТ \"Банкінтерсервіс\""
+},
+"name": "ЗАТ \"Банкінтерсервіс\"",
+"address": {
+"postalCode": "65987",
+"countryName": "УКРАЇНА",
+"streetAddress": "просп. Московський, буд. 45",
+"region": "м.Київ",
+"locality": "ОБОЛОНСЬКИЙ"
+}
+},
+"dateSubmitted": "2016-07-21T12:33:25.579934+03:00",
+"complaintID": "UA-2016-07-21-000052-2.21",
+"date": "2016-07-21T12:33:25.594857+03:00",
+"type": "complaint",
+"id": "911f5d9e924f4408acf0292848085ca3"
+}
+],
+"qualified": true,
+"bidID": "d391b38ce13b44fe88c832bb64ec7f3c",
+"date": "2016-10-04T16:21:34.245515+03:00",
+"id": "efa0d365d009477b840d0c0422489abc"
+}
+}

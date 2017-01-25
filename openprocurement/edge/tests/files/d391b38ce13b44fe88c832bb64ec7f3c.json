@@ -1,0 +1,126 @@
+{
+"data": {
+"status": "active",
+"qualificationDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"format": "application/pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/888cdfa680a3492383ee098d169244bc?Prefix=000e4610a6cb461e9c25e45974979bf1%2F1c9548d090f94f24837c7b39c041bc78&KeyID=1331dc52&Signature=Rwi2wWqeVMRj5V80%2FkmrH2pCYV4%2F%252Blz8RMHztQMEEMf5inB7J6ePP1tnSZNIyG672KhgvD0mvesuRDVgD3LsCQ%253D%253D",
+"title": "d-8ff9a9adaliquidf5mBm5.pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:54.435133+03:00",
+"dateModified": "2016-10-04T15:54:54.435155+03:00",
+"id": "1c9548d090f94f24837c7b39c041bc78"
+}
+],
+"documents": [
+{
+"confidentiality": "public",
+"language": "uk",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"url": "https://public.docs-sandbox.openprocurement.org/get/74d48a41dfc54348b38ccfb2e3cefafb?Prefix=000e4610a6cb461e9c25e45974979bf1%2Ffb5e261dd3cb48489d5f6735663d968e&KeyID=1331dc52&Signature=aFB1iDDMkNBVrphqABt%2FzfBqtR5wvHchRTreeKIvOG35weaceFx9Uv%252BFsQlx3ocQXr2GIhFFghS19Q4frpTGBA%253D%253D",
+"title": "d-a827f6aedoloremqueKKzHiJ.docx",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:11.363456+03:00",
+"dateModified": "2016-10-04T15:54:11.363478+03:00",
+"id": "fb5e261dd3cb48489d5f6735663d968e"
+},
+{
+"confidentiality": "buyerOnly",
+"language": "uk",
+"format": "application/pdf",
+"url": "https://public.api-sandbox.openprocurement.org/api/2.3/tenders/000e4610a6cb461e9c25e45974979bf1/bids/d391b38ce13b44fe88c832bb64ec7f3c/documents/fb5e261dd3cb48489d5f6735663d968e?download=9ce5841b7dcb4b109a63625600d327df",
+"confidentialityRationale": "Страта проднювати чекман лакейча повислужувати відчалювати прахтика підсудній.",
+"title": "d-3a709288ealBSNN2.pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:11.363456+03:00",
+"dateModified": "2016-10-04T15:54:15.909612+03:00",
+"id": "fb5e261dd3cb48489d5f6735663d968e"
+}
+],
+"parameters": [
+{
+"code": "f19efff715d249dc810b0a8a4c109a0d",
+"value": 0
+},
+{
+"code": "d238a8b370384dbb853137ee0ccdc4b1",
+"value": 0.01
+},
+{
+"code": "a71b0035b7d14033aaaa73cefeffa90a",
+"value": 0
+}
+],
+"eligibilityDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"format": "application/msword",
+"url": "https://public.docs-sandbox.openprocurement.org/get/627b08aed9bf4ed58e0b1ff305598dfb?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fbad95fc7808448898f2a7555c9b17c0b&KeyID=1331dc52&Signature=8GNi4gXEcHLfXyypcRexB2J09O9n6Cax8ou55GMJ857stTnOmE6Mz%2F8rKkUG2X0fqbtstJU02NBn3wAWSL37Bw%253D%253D",
+"title": "d-676bef34consequaturZpgKiE.doc",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:58.359179+03:00",
+"dateModified": "2016-10-04T15:54:58.359201+03:00",
+"id": "bad95fc7808448898f2a7555c9b17c0b"
+}
+],
+"selfEligible": true,
+"lotValues": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"date": "2016-10-04T15:54:07.116548+03:00",
+"status": "active",
+"participationUrl": "https://auction-sandbox.openprocurement.org/tenders/000e4610a6cb461e9c25e45974979bf1_422eab9551d84b7d9469ed4f1640b2bc/login?bidder_id=d391b38ce13b44fe88c832bb64ec7f3c&hash=0aab9cb32157818961c3340a70cda647075ccc17",
+"value": {
+"currency": "UAH",
+"amount": 9340030788.14,
+"valueAddedTaxIncluded": true
+}
+}
+],
+"selfQualified": true,
+"financialDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"format": "application/msword",
+"url": "https://public.docs-sandbox.openprocurement.org/get/dec4769e6b4e4d3a95fb15353907b927?Prefix=000e4610a6cb461e9c25e45974979bf1%2F4c98d31f48704b44b17cdce8025702ca&KeyID=1331dc52&Signature=DObQVGs3r%2Fh5lwzRvMKYAWrebC%2FePg3tDbD2HKy03lrh%252Bm4UZaQzhsqTMoY%252BsAKMOeVaxK%252BBEP8PqAhAAJTQCw%253D%253D",
+"title": "d-d099f56denim6vwixW.doc",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:50.353302+03:00",
+"dateModified": "2016-10-04T15:54:50.353327+03:00",
+"id": "4c98d31f48704b44b17cdce8025702ca"
+}
+],
+"tenderers": [
+{
+"contactPoint": {
+"url": "http://e-tender.biz",
+"faxNumber": "408-23-33",
+"email": "poliklinika1solom@yandex.ua",
+"name": "Чепіков Олександр Миколайович",
+"telephone": "457-98-17"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "04593340",
+"legalName": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва"
+},
+"name": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "проспект Космонавта Комарова, 36, 4А",
+"countryName_ru": "Украина",
+"postalCode": "03067"
+}
+}
+],
+"date": "2016-10-04T15:53:56.160671+03:00",
+"id": "d391b38ce13b44fe88c832bb64ec7f3c"
+}
+}

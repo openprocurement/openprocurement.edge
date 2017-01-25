@@ -1,0 +1,23 @@
+{
+"data": [
+{
+"status": "active",
+"documents": [
+{
+"format": "text/plain",
+"url": "https://public.docs-sandbox.openprocurement.org/get/ca3458d63930458ca7ad40313da37747?Prefix=5bea18896d02459685f6f9494ed1ec80%2Fe5d1cfd73fba43cc8296e7ac827eb269&KeyID=1331dc52&Signature=q%252ByGYaZwWQ5Qk5pl9ii20LyMYdl5o1RPRDsN6NNxSJXpm3Kdbv%2FqNTmSNZ4K%2FvTg%2FwDSlpcslTAz76VvYRhaAg%253D%253D",
+"title": "zapros.pdf",
+"documentOf": "tender",
+"datePublished": "2016-04-20T20:16:56.376240+03:00",
+"dateModified": "2016-04-20T20:16:56.376266+03:00",
+"id": "e5d1cfd73fba43cc8296e7ac827eb269"
+}
+],
+"reason": "Тестирование",
+"reasonType": "cancelled",
+"date": "2016-04-20T20:16:55.662327+03:00",
+"cancellationOf": "tender",
+"id": "e6bd49d00bde4847b84e936489cf5df5"
+}
+]
+}

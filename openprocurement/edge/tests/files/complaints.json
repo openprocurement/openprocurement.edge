@@ -1,0 +1,107 @@
+{
+"data": [
+{
+"status": "resolved",
+"tendererActionDate": "2016-10-04T15:49:28.956116+03:00",
+"description": "Підставляти дик матюнка порхавка охотка позсапувати уторжитися.",
+"title": "Спонаджувати докука вимірювати.",
+"resolutionType": "resolved",
+"resolution": "Чужинонька докірний відмащувати весілчанин мама я в телевізорі підсмалити панюга присилити цибульний усподі чудар призначати утинок лаверджет підбурити буба рідкий ревучий попутник грішитель.",
+"author": {
+"contactPoint": {
+"url": "http://www.uspa.gov.ua/",
+"faxNumber": "380512508818",
+"email": "shyrikm@ukr.net",
+"name": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)",
+"telephone": "380512508797"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "38728444",
+"legalName": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)"
+},
+"name": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)",
+"address": {
+"postalCode": "54020",
+"countryName": "Україна",
+"streetAddress": "вулиця Млинна, 23, 23",
+"region": "Миколаївська область",
+"locality": "Миколаїв"
+}
+},
+"satisfied": true,
+"dateAnswered": "2016-10-04T15:49:28.956095+03:00",
+"tendererAction": "Продам Гараж іконний побабіти чуркати замішанина напругом недоношениця.",
+"dateSubmitted": "2016-10-04T15:48:53.879979+03:00",
+"complaintID": "UA-2016-10-04-000315.1",
+"date": "2016-10-04T15:49:59.080682+03:00",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"format": "application/pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/7f2ca60af15d48a7b1596e984e244f38?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fa8779280923f43888b428ecbc20fc0af&KeyID=1331dc52&Signature=Gr7bieQ%2Fqlk9pcqO0aOZjYpkAAjhXLf0Lb0%2FBsMyr%2FoXnxBTO4AsQCECqpCLMWal5%2F076VTALrtLRU7CNon6BQ%253D%253D",
+"title": "d-9778c553tenetur9lnWy5.pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:48:50.154650+03:00",
+"dateModified": "2016-10-04T15:48:50.154675+03:00",
+"id": "a8779280923f43888b428ecbc20fc0af"
+}
+],
+"type": "claim",
+"id": "c495b3ea6fb04ed6ba438cad2e91d817"
+},
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"status": "resolved",
+"tendererActionDate": "2016-10-04T15:51:40.001130+03:00",
+"description": "Повиводити воратися оздобний попівський дитинонька гильце спонаджувати побабіти.",
+"author": {
+"contactPoint": {
+"url": "http://www.pcenter.org.ua",
+"faxNumber": "5228745",
+"email": "pcenter_ekonomist@ukr.net",
+"name": "Пуніна Ірина Пилипівна",
+"telephone": "5228755"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "22964365",
+"legalName": "Перинатальний центр м.Києва"
+},
+"name": "Перинатальний центр м.Києва",
+"address": {
+"postalCode": "03150",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"resolutionType": "resolved",
+"resolution": "Москалитися базікало лінтюга жерлистий буніти попороскошувати постогнувати крамарювати кізка пересолоджувати відробляти рукописний кишкатий ураз II за-що-раз кормитися гаїр ракляцький рострясти набірати.",
+"title": "Запащекувати победрина ужисько.",
+"satisfied": true,
+"dateAnswered": "2016-10-04T15:51:40.001110+03:00",
+"tendererAction": "Кремпілець обдарити свид священників перевалити порхавка узголов'я поназбірувати наблювати шалювати зросливий хрокнути муркотати.",
+"dateSubmitted": "2016-10-04T15:51:03.002870+03:00",
+"complaintID": "UA-2016-10-04-000315.2",
+"date": "2016-10-04T15:52:12.409191+03:00",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"url": "https://public.docs-sandbox.openprocurement.org/get/4c0bdac0ae6044f0a4ab8ec19b998940?Prefix=000e4610a6cb461e9c25e45974979bf1%2F9c827ea09cfa409085aa5c4c5d4a27ef&KeyID=1331dc52&Signature=VRbjEKcXlU3g6BvWuq1qkJWcKLxLggre4Vhvs0k65rNg1HNR5R%252BFKLBfIJYW9FflKGJAsQ0BxUcvCJoN4ay%252BAQ%253D%253D",
+"title": "d-47f1f942solutaizwVPr.docx",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:50:58.708905+03:00",
+"dateModified": "2016-10-04T15:50:58.708944+03:00",
+"id": "9c827ea09cfa409085aa5c4c5d4a27ef"
+}
+],
+"type": "claim",
+"id": "e6bb4cb3c0dd490386bec1286ddbd8db"
+}
+]
+}

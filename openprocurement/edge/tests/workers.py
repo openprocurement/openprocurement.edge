@@ -23,7 +23,9 @@ class TestResourceItemWorker(unittest.TestCase):
         'worker_sleep': 3,
         'retry_default_timeout': 5,
         'retries_count': 2,
-        'queue_timeout': 3
+        'queue_timeout': 3,
+        'bulk_save_limit': 1,
+        'bulk_save_interval': 1
     }
 
     log_dict = {
@@ -61,12 +63,16 @@ class TestResourceItemWorker(unittest.TestCase):
 
     def test_init(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
-                                    'db', 'config_dict',
+                                    'db',
+                                    {
+                                        'bulk_save_limit': 1,
+                                        'bulk_save_interval': 1},
                                     'retry_resource_items_queue', 'log_dict')
         self.assertEqual(worker.api_clients_queue, 'api_clients_queue')
         self.assertEqual(worker.resource_items_queue, 'resource_items_queue')
         self.assertEqual(worker.db, 'db')
-        self.assertEqual(worker.config, 'config_dict')
+        self.assertEqual(worker.config,
+                         {'bulk_save_limit': 1, 'bulk_save_interval': 1})
         self.assertEqual(worker.retry_resource_items_queue,
                          'retry_resource_items_queue')
         self.assertEqual(worker.log_dict, 'log_dict')
@@ -255,7 +261,7 @@ class TestResourceItemWorker(unittest.TestCase):
         del worker
 
 
-    def test__save_to_db(self):
+    def test__add_to_bulk(self):
         retry_queue = Queue()
         queue_resource_item = {
             'doc_type': 'Tender',
@@ -282,8 +288,8 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(worker.log_dict['update_documents'], 0)
         self.assertEqual(worker.log_dict['save_documents'], 0)
         self.assertEqual(worker.log_dict['exceptions_count'], 0)
-        worker._save_to_db(resource_item_dict, queue_resource_item,
-                           resource_item_doc_dict)
+        worker._add_to_bulk(resource_item_dict, queue_resource_item,
+                            resource_item_doc_dict)
         self.assertEqual(worker.log_dict['skiped'], 1)
         self.assertEqual(worker.log_dict['update_documents'], 0)
         self.assertEqual(worker.log_dict['save_documents'], 0)
@@ -291,30 +297,21 @@ class TestResourceItemWorker(unittest.TestCase):
 
         # Update test
         resource_item_dict['dateModified'] = datetime.datetime.utcnow().isoformat()
-        worker._save_to_db(resource_item_dict, queue_resource_item,
-                           resource_item_doc_dict)
+        worker._add_to_bulk(resource_item_dict, queue_resource_item,
+                            resource_item_doc_dict)
         self.assertEqual(worker.log_dict['update_documents'], 1)
         self.assertEqual(worker.log_dict['save_documents'], 0)
         self.assertEqual(worker.log_dict['exceptions_count'], 0)
 
         # Save test
-        worker._save_to_db(resource_item_dict, queue_resource_item,
+        worker._add_to_bulk(resource_item_dict, queue_resource_item,
                            None)
         self.assertEqual(worker.log_dict['save_documents'], 1)
         self.assertEqual(worker.log_dict['exceptions_count'], 0)
 
-        # Exception test
-        self.assertEqual(worker.retry_resource_items_queue.qsize(), 0)
-        worker.db.save.side_effect = Exception('Save Exception')
-        worker._save_to_db(resource_item_dict, queue_resource_item,
-                           None)
-        self.assertEqual(worker.log_dict['exceptions_count'], 1)
-        sleep(worker.config['retry_default_timeout'])
-        self.assertEqual(worker.retry_resource_items_queue.qsize(), 1)
-
     def test_shutdown(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
-                                    'db', 'config_dict',
+                                    'db', {'bulk_save_limit': 1, 'bulk_save_interval': 1},
                                     'retry_resource_items_queue', 'log_dict')
         self.assertEqual(worker.exit, False)
         worker.shutdown()

@@ -1,0 +1,206 @@
+{
+    "data": [
+        {
+            "status": "cancelled",
+            "items": [
+                {
+                    "description": "i-ecacd11b: Права вимоги за кредитними договорами",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Права вимоги за кредитними договорами",
+                        "id": "07000000-9"
+                    },
+                    "description_en": "i-573eb7da: Rights and claims under credit agreements",
+                    "description_ru": "i-c378ae08: Права и требования по кредитным договорам",
+                    "id": "0e87660d07a145ae964e94d98c4d21de",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 49
+                },
+                {
+                    "description": "i-ba0af992: Кредити Юридичних осіб",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Кредити Юридичних осіб",
+                        "id": "07100000-0"
+                    },
+                    "description_en": "i-0ca6ef8f: Corporate loans",
+                    "description_ru": "i-4f419ca6: Кредиты юридических лиц",
+                    "id": "1dd579200c794f12861e7da8eb1f941a",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 41
+                },
+                {
+                    "description": "i-89b1d0c1: Кредити Юридичних осіб заставні",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Кредити Юридичних осіб заставні",
+                        "id": "07120000-6"
+                    },
+                    "description_en": "i-5c7b9fee: Secured corporate loans",
+                    "description_ru": "i-398b725c: Кредиты юридических лиц залоговые",
+                    "id": "a2095152dccf468b86b53ee7061295b2",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 57
+                }
+            ],
+            "suppliers": [
+                {
+                    "additionalIdentifiers": [
+                        {
+                            "scheme": "UA-FIN",
+                            "id": "А01 259397"
+                        }
+                    ],
+                    "contactPoint": {
+                        "url": "http://kneu.edu.ua/",
+                        "email": "tender01@kneu.kiev.ua",
+                        "telephone": "456-12-01",
+                        "name": "Узунов Лев Олександрович",
+                        "faxNumber": "371-61-72"
+                    },
+                    "identifier": {
+                        "scheme": "UA-EDR",
+                        "id": "02070884",
+                        "legalName": "Державний вищий навчальний заклад \" Київський національний економічний університет імені Вадима Гетьмана\""
+                    },
+                    "name": "Державний вищий навчальний заклад \" Київський національний економічний університет імені Вадима Гетьмана\"",
+                    "address": {
+                        "locality": "Київ",
+                        "region": "місто Київ",
+                        "countryName_en": "Ukraine",
+                        "countryName": "Україна",
+                        "streetAddress": "проспект Перемоги, 54/1",
+                        "countryName_ru": "Украина",
+                        "postalCode": "03680"
+                    }
+                }
+            ],
+            "value": {
+                "currency": "UAH",
+                "amount": 235473471.5,
+                "valueAddedTaxIncluded": true
+            },
+            "date": "2017-01-01T17:54:38.305521+02:00",
+            "awardID": "338c6165466d4f9387606c71311d9e8b",
+            "id": "ecc619a81956433491a8e67bbb8284a8",
+            "contractID": "UA-EA-2017-01-01-000137-1-21"
+        },
+        {
+            "status": "active",
+            "documents": [
+                {
+                    "hash": "md5:bbb976590a6e82945dad4521b81d12c5",
+                    "format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "url": "http://public.docs-sandbox.ea.openprocurement.org/get/69f7115ad36449b2b5868d7bcf9b114a?KeyID=1816418e&Signature=E%2Fu9WxNK6ggt8rZXafi3hKyU7Z2RGOAa4PIaV0LIgosMMNAzuxBDliqX%2FyRfhKvhAa93zlfMjNkUA0xjwtOeCA%253D%253D",
+                    "title": "d-78a91eebexcepturiXimS0A.docx",
+                    "documentOf": "tender",
+                    "datePublished": "2017-01-01T17:56:08.580071+02:00",
+                    "documentType": "contractSigned",
+                    "dateModified": "2017-01-01T17:56:08.580095+02:00",
+                    "id": "77e7cf19a24b49c3900cb90c7617ed50"
+                }
+            ],
+            "items": [
+                {
+                    "description": "i-ecacd11b: Права вимоги за кредитними договорами",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Права вимоги за кредитними договорами",
+                        "id": "07000000-9"
+                    },
+                    "description_en": "i-573eb7da: Rights and claims under credit agreements",
+                    "description_ru": "i-c378ae08: Права и требования по кредитным договорам",
+                    "id": "0e87660d07a145ae964e94d98c4d21de",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 49
+                },
+                {
+                    "description": "i-ba0af992: Кредити Юридичних осіб",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Кредити Юридичних осіб",
+                        "id": "07100000-0"
+                    },
+                    "description_en": "i-0ca6ef8f: Corporate loans",
+                    "description_ru": "i-4f419ca6: Кредиты юридических лиц",
+                    "id": "1dd579200c794f12861e7da8eb1f941a",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 41
+                },
+                {
+                    "description": "i-89b1d0c1: Кредити Юридичних осіб заставні",
+                    "classification": {
+                        "scheme": "CAV",
+                        "description": "Кредити Юридичних осіб заставні",
+                        "id": "07120000-6"
+                    },
+                    "description_en": "i-5c7b9fee: Secured corporate loans",
+                    "description_ru": "i-398b725c: Кредиты юридических лиц залоговые",
+                    "id": "a2095152dccf468b86b53ee7061295b2",
+                    "unit": {
+                        "code": "E48",
+                        "name": "послуга"
+                    },
+                    "quantity": 57
+                }
+            ],
+            "suppliers": [
+                {
+                    "additionalIdentifiers": [
+                        {
+                            "scheme": "UA-FIN",
+                            "id": "А01 128712"
+                        }
+                    ],
+                    "contactPoint": {
+                        "url": "http://dk.kievcity.gov.ua",
+                        "email": "buhkapela@ukr.net",
+                        "telephone": "0442346071",
+                        "name": "Литвин Наталія Миколаївна",
+                        "faxNumber": "0442346071"
+                    },
+                    "identifier": {
+                        "scheme": "UA-EDR",
+                        "id": "02226079",
+                        "legalName": "\"Концертний заклад культури \"Муніципальна академічна чоловіча хорова капела ім. Л.М. Ревуцького\""
+                    },
+                    "name": "\"Концертний заклад культури \"Муніципальна академічна чоловіча хорова капела ім. Л.М. Ревуцького\"",
+                    "address": {
+                        "locality": "Київ",
+                        "region": "місто Київ",
+                        "countryName_en": "Ukraine",
+                        "countryName": "Україна",
+                        "streetAddress": "Крутий узвіз, 1/2, 2/1",
+                        "countryName_ru": "Украина",
+                        "postalCode": "01004"
+                    }
+                }
+            ],
+            "value": {
+                "currency": "UAH",
+                "amount": 211870923.93,
+                "valueAddedTaxIncluded": true
+            },
+            "dateSigned": "2017-01-01T17:56:30.015999+02:00",
+            "date": "2017-01-01T17:56:30.032447+02:00",
+            "awardID": "141fc369c8d143d89c389ad3924a3083",
+            "id": "df4ec5a5ee8844d68338093048c708a8",
+            "contractID": "UA-EA-2017-01-01-000137-1-22"
+        }
+    ]
+}

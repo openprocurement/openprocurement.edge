@@ -65,7 +65,6 @@ def _get_changes_fields(resource):
     return fields
 
 
-
 def all_view_ViewDefinition(resource):
     return ViewDefinition(resource, 'all', '''function(doc) {
     if(doc.doc_type == '%(resource)s') {

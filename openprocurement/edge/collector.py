@@ -42,7 +42,8 @@ class LogsCollector(object):
                 raise LogsCollectorConfigError('ConnectionError: Missing '
                                                'couchdb name')
             server = Server(self.couch_url,
-                            session=Session(retry_delays=range(10)))
+                            session=Session(retry_delays=range(10)),
+                            full_commit=False)
             try:
                 if self.db_name not in server:
                     self.db = server.create(self.db_name)
