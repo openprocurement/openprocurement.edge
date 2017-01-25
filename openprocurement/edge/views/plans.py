@@ -1,33 +1,34 @@
 # -*- coding: utf-8 -*-
 from functools import partial
-from openprocurement.api.utils import (
+from openprocurement.edge.utils import (
     context_unpack,
     decrypt,
     encrypt,
     APIResource,
     json_view
 )
-from openprocurement.edge.utils import planningresource, clean_up_doc
+from openprocurement.edge.utils import planningresource
 
 
-from openprocurement.planning.api.design import (
-    FIELDS,
-    plans_by_dateModified_view,
-    plans_real_by_dateModified_view,
-    plans_test_by_dateModified_view,
-    plans_by_local_seq_view,
-    plans_real_by_local_seq_view,
-    plans_test_by_local_seq_view,
+from openprocurement.edge.design import (
+    by_dateModified_view_ViewDefinition,
+    real_by_dateModified_view_ViewDefinition,
+    test_by_dateModified_view_ViewDefinition,
+    by_local_seq_view_ViewDefinition,
+    real_by_local_seq_view_ViewDefinition,
+    test_by_local_seq_view_ViewDefinition,
 )
+from openprocurement.edge.design import PLAN_FIELDS as FIELDS
+
 VIEW_MAP = {
-    u'': plans_real_by_dateModified_view,
-    u'test': plans_test_by_dateModified_view,
-    u'_all_': plans_by_dateModified_view,
+    u'': real_by_dateModified_view_ViewDefinition('plans'),
+    u'test': test_by_dateModified_view_ViewDefinition('plans'),
+    u'_all_': by_dateModified_view_ViewDefinition('plans'),
 }
 CHANGES_VIEW_MAP = {
-    u'': plans_real_by_local_seq_view,
-    u'test': plans_test_by_local_seq_view,
-    u'_all_': plans_by_local_seq_view,
+    u'': real_by_local_seq_view_ViewDefinition('plans'),
+    u'test': test_by_local_seq_view_ViewDefinition('plans'),
+    u'_all_': by_local_seq_view_ViewDefinition('plans'),
 }
 FEED = {
     u'dateModified': VIEW_MAP,
@@ -182,24 +183,3 @@ class PlansResource(APIResource):
                 "uri": self.request.route_url('Plans', _query=pparams)
             }
         return data
-
-
-@planningresource(name='Plan',
-            path='/plans/{plan_id}',
-            description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
-class PlanResource(APIResource):
-
-    @json_view()
-    def get(self):
-        plan = clean_up_doc(self.request.validated['plan'])
-        return {'data': plan}
-
-
-@planningresource(name='Plan Items',
-            path='/plans/{plan_id}/*items',
-            description="Open Planing compatible data exchange format. See http://ocds.open-planing.org/standard/r/master/#plan for more info")
-class PlanItemsResource(APIResource):
-
-    @json_view()
-    def get(self):
-        return {'data': self.request.validated['item']}

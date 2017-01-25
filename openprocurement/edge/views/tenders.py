@@ -1,27 +1,31 @@
 # -*- coding: utf-8 -*-
 from functools import partial
-from openprocurement.api.design import (
-    FIELDS,
-    tenders_by_dateModified_view,
-    tenders_real_by_dateModified_view,
-    tenders_test_by_dateModified_view,
-    tenders_by_local_seq_view,
-    tenders_real_by_local_seq_view,
-    tenders_test_by_local_seq_view,
+from openprocurement.edge.utils import (
+    APIResource,
+    decrypt,
+    encrypt,
+    json_view,
+    opresource
 )
-
-from openprocurement.edge.utils import opresource, clean_up_doc
-from openprocurement.api.utils import context_unpack, decrypt, encrypt, json_view, APIResource
+from openprocurement.edge.design import (
+    by_dateModified_view_ViewDefinition,
+    real_by_dateModified_view_ViewDefinition,
+    test_by_dateModified_view_ViewDefinition,
+    by_local_seq_view_ViewDefinition,
+    real_by_local_seq_view_ViewDefinition,
+    test_by_local_seq_view_ViewDefinition,
+)
+from openprocurement.edge.design import TENDER_FIELDS as FIELDS
 
 VIEW_MAP = {
-    u'': tenders_real_by_dateModified_view,
-    u'test': tenders_test_by_dateModified_view,
-    u'_all_': tenders_by_dateModified_view,
+    u'': real_by_dateModified_view_ViewDefinition('tenders'),
+    u'test': test_by_dateModified_view_ViewDefinition('tenders'),
+    u'_all_': by_dateModified_view_ViewDefinition('tenders'),
 }
 CHANGES_VIEW_MAP = {
-    u'': tenders_real_by_local_seq_view,
-    u'test': tenders_test_by_local_seq_view,
-    u'_all_': tenders_by_local_seq_view,
+    u'': real_by_local_seq_view_ViewDefinition('tenders'),
+    u'test': test_by_local_seq_view_ViewDefinition('tenders'),
+    u'_all_': by_local_seq_view_ViewDefinition('tenders'),
 }
 FEED = {
     u'dateModified': VIEW_MAP,
@@ -178,24 +182,3 @@ class TendersResource(APIResource):
                 "uri": self.request.route_url('Tenders', _query=pparams)
             }
         return data
-
-
-@opresource(name='Tender',
-            path='/tenders/{tender_id}',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
-class TenderResource(APIResource):
-
-    @json_view()
-    def get(self):
-        tender = clean_up_doc(self.request.validated['tender'])
-        return {'data': tender}
-
-
-@opresource(name='Tender Items',
-            path='/tenders/{tender_id}/*items',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#tender for more info")
-class TenderItemsResource(APIResource):
-
-    @json_view()
-    def get(self):
-        return {'data': self.request.validated['item']}

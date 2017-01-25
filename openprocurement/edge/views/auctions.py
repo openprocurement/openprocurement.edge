@@ -1,33 +1,32 @@
 # -*- coding: utf-8 -*-
 from functools import partial
-from openprocurement.api.models import get_now
-from openprocurement.api.utils import (
+from openprocurement.edge.utils import (
     context_unpack,
     decrypt,
     encrypt,
     APIResource,
     json_view
 )
-from openprocurement.edge.utils import eaopresource, clean_up_doc
+from openprocurement.edge.utils import eaopresource
 
-from openprocurement.auctions.core.design import (
-    FIELDS,
-    auctions_by_dateModified_view,
-    auctions_real_by_dateModified_view,
-    auctions_test_by_dateModified_view,
-    auctions_by_local_seq_view,
-    auctions_real_by_local_seq_view,
-    auctions_test_by_local_seq_view,
+from openprocurement.edge.design import (
+    by_dateModified_view_ViewDefinition,
+    real_by_dateModified_view_ViewDefinition,
+    test_by_dateModified_view_ViewDefinition,
+    by_local_seq_view_ViewDefinition,
+    real_by_local_seq_view_ViewDefinition,
+    test_by_local_seq_view_ViewDefinition,
 )
+from openprocurement.edge.design import AUCTION_FIELDS as FIELDS
 VIEW_MAP = {
-    u'': auctions_real_by_dateModified_view,
-    u'test': auctions_test_by_dateModified_view,
-    u'_all_': auctions_by_dateModified_view,
+    u'': real_by_dateModified_view_ViewDefinition('auctions'),
+    u'test': test_by_dateModified_view_ViewDefinition('auctions'),
+    u'_all_': by_dateModified_view_ViewDefinition('auctions'),
 }
 CHANGES_VIEW_MAP = {
-    u'': auctions_real_by_local_seq_view,
-    u'test': auctions_test_by_local_seq_view,
-    u'_all_': auctions_by_local_seq_view,
+    u'': real_by_local_seq_view_ViewDefinition('auctions'),
+    u'test': test_by_local_seq_view_ViewDefinition('auctions'),
+    u'_all_': by_local_seq_view_ViewDefinition('auctions'),
 }
 FEED = {
     u'dateModified': VIEW_MAP,
@@ -182,24 +181,3 @@ class AuctionsResource(APIResource):
                 "uri": self.request.route_url('Auctions', _query=pparams)
             }
         return data
-
-
-@eaopresource(name='Auction',
-            path='/auctions/{auction_id}',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
-class AuctionResource(APIResource):
-
-    @json_view()
-    def get(self):
-        auction = clean_up_doc(self.request.validated['auction'])
-        return {'data': auction}
-
-
-@eaopresource(name='Auction Items',
-            path='/auctions/{auction_id}/*items',
-            description="Open Contracting compatible data exchange format. See http://ocds.open-contracting.org/standard/r/master/#auction for more info")
-class AuctionItemsResource(APIResource):
-
-    @json_view()
-    def get(self):
-        return {'data': self.request.validated['item']}
