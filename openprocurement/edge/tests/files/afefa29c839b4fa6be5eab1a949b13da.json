@@ -1,0 +1,68 @@
+{
+"data": {
+    "status": "active",
+    "documents": [
+        {
+            "hash": "md5:d41d8cd98f00b204e9800998ecf8427e",
+            "format": "text/plain",
+            "url": "http://public.docs-sandbox.ea.openprocurement.org/get/5ce3ce4429594639968a86684e8009c9?KeyID=1816418e&Signature=7bN%2FQ7QFMSD9VCXy9plk35zzn13ShuSrJ4brmnToz0UP0L%252B%2FnwoyjSr6EuogRR6xJ8wRf9%252BQ3ygGhhb7ARfnAQ%253D%253D",
+            "title": "test1.txt",
+            "documentOf": "tender",
+            "datePublished": "2016-12-12T19:48:54.647036+02:00",
+            "documentType": "financialLicense",
+            "dateModified": "2016-12-12T19:48:54.647059+02:00",
+            "id": "5617f2d1a30d48f99f4b8c0aceeddbb0"
+        },
+        {
+            "hash": "md5:d41d8cd98f00b204e9800998ecf8427e",
+            "format": "text/plain",
+            "url": "http://public.docs-sandbox.ea.openprocurement.org/get/e627d037dc9041de9f7d2f9eb5c386a9?KeyID=1816418e&Signature=GHX2lqZ1a6VqRHlCCuZWyB1vf0JDpIG7JyGqnR6WUFc0Sr2WbxHuTD%252BokReLpVj%252B%2F6JBZLfbUqqxQ7d3SHFUAA%253D%253D",
+            "title": "ggg_license.txt",
+            "documentOf": "tender",
+            "datePublished": "2016-12-12T19:48:55.354180+02:00",
+            "documentType": "financialLicense",
+            "dateModified": "2016-12-12T19:48:55.354201+02:00",
+            "id": "e09e04b5c61044f9a81d30be36814943"
+        }
+    ],
+    "eligible": true,
+    "value": {
+        "currency": "UAH",
+        "amount": 3000,
+        "valueAddedTaxIncluded": false
+    },
+    "date": "2016-12-12T19:48:53.163462+02:00",
+    "qualified": true,
+    "tenderers": [
+        {
+            "additionalIdentifiers": [
+                {
+                    "scheme": "UA-FIN",
+                    "id": "12345",
+                    "legalName": "ТОВ \"Testov Test 2\""
+                }
+            ],
+            "contactPoint": {
+                "email": "d.karnaukh+merchant2@smartweb.com.ua",
+                "telephone": "+380620000000, +380630000000",
+                "name": "Testt Testovich Testovv"
+            },
+            "identifier": {
+                "scheme": "UA-EDR",
+                "id": "6666662",
+                "legalName": "ТОВ \"Testov Test 2\""
+            },
+            "name": "ТОВ \"Testov Test 2\"",
+            "address": {
+                "postalCode": "123123",
+                "countryName": "Україна",
+                "streetAddress": "asdfasdf",
+                "region": "Дніпропетровська область",
+                "locality": "asdfasdf"
+            }
+        }
+    ],
+    "owner": "zakupki.prom.ua",
+    "id": "afefa29c839b4fa6be5eab1a949b13da"
+}
+}

@@ -2,13 +2,19 @@
 from gevent import monkey
 monkey.patch_all()
 
+from datetime import datetime
 import gevent
 from gevent import Greenlet
 from gevent import spawn, sleep, idle
 from gevent.queue import Queue, Empty
+import json
 import logging
 import logging.config
-from openprocurement_client.exceptions import InvalidResponse, RequestFailed
+from openprocurement_client.exceptions import (
+    InvalidResponse,
+    RequestFailed,
+    ResourceNotFound
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +32,10 @@ class ResourceItemWorker(Greenlet):
         self.api_clients_queue = api_clients_queue
         self.resource_items_queue = resource_items_queue
         self.retry_resource_items_queue = retry_resource_items_queue
+        self.bulk = []
+        self.bulk_save_limit = self.config['bulk_save_limit']
+        self.bulk_save_interval = self.config['bulk_save_interval']
+        self.start_time = datetime.now()
 
     def add_to_retry_queue(self, resource_item, status_code=0):
         timeout = resource_item.get('timeout') or self.config['retry_default_timeout']
@@ -107,6 +117,10 @@ class ResourceItemWorker(Greenlet):
             if e.status_code == 429:
                 if api_client_dict['request_interval'] > self.config['drop_threshold_client_cookies']:
                     api_client_dict['client'].session.cookies.clear()
+                    try:
+                        del api_client_dict['client'].params['offset']
+                    except Exception:
+                        pass
                     api_client_dict['request_interval'] = 0
                 else:
                     api_client_dict['request_interval'] += self.config['client_inc_step_timeout']
@@ -123,6 +137,24 @@ class ResourceItemWorker(Greenlet):
             }, status_code=e.status_code)
             self.log_dict['exceptions_count'] += 1
             return None
+        except ResourceNotFound as e:
+            logger.error('Resource not found: {}'.format(e.message))
+            error_messages = json.loads(e.message)
+            for error in error_messages['errors']:
+                if error['description'] == 'Offset expired/invalid':
+                    api_client_dict['client'].session.cookies.clear()
+                    try:
+                        del api_client_dict['client'].params['offset']
+                    except Exception:
+                        pass
+                    logger.info('Clear client cookies')
+                    self.add_to_retry_queue({
+                        'id': queue_resource_item['id'],
+                        'dateModified': queue_resource_item['dateModified']
+                    })
+                    break
+            self.api_clients_queue.put(api_client_dict)
+            return None
         except Exception as e:
             self.api_clients_queue.put(api_client_dict)
             logger.error('Error while getting resource item from api'
@@ -134,39 +166,60 @@ class ResourceItemWorker(Greenlet):
             self.log_dict['exceptions_count'] += 1
             return None
 
-    def _save_to_db(self, resource_item, queue_resource_item,
+    def _add_to_bulk(self, resource_item, queue_resource_item,
                     resource_item_doc):
         resource_item['doc_type'] = self.config['resource'][:-1].title()
         resource_item['_id'] = resource_item['id']
         if resource_item_doc:
             resource_item['_rev'] = resource_item_doc['_rev']
             if resource_item['dateModified'] > resource_item_doc['dateModified']:
-                logger.info('Update {} {} '.format(
+                logger.info('Update {} {}'.format(
                     self.config['resource'][:-1], queue_resource_item['id']))
                 self.update_doc = True
             else:
                 self.log_dict['skiped'] += 1
                 return
         else:
-            logger.info('Save {} {} '.format(
+            logger.info('Save {} {}'.format(
                 self.config['resource'][:-1], queue_resource_item['id']))
             self.update_doc = False
-        try:
-            self.db.save(resource_item)
-            if self.update_doc:
-                self.log_dict['update_documents'] += 1
-            else:
-                self.log_dict['save_documents'] += 1
-            return
-        except Exception as e:
-            logger.error('Saving {} {} fail with error {}'.format(
-                self.config['resource'][:-1], queue_resource_item['id'], e.message),
-                extra={'MESSAGE_ID': 'edge_bridge_fail_save_in_db'})
-            self.add_to_retry_queue({
-                'id': queue_resource_item['id'],
-                'dateModified': queue_resource_item['dateModified']})
-            self.log_dict['exceptions_count'] += 1
-            return
+        self.bulk.append(resource_item)
+        if self.update_doc:
+            self.log_dict['update_documents'] += 1
+        else:
+            self.log_dict['save_documents'] += 1
+        return
+
+
+    def _save_bulk_docs(self):
+        if (len(self.bulk) > self.bulk_save_limit or
+                (datetime.now() - self.start_time).total_seconds() \
+                    > self.bulk_save_interval or self.exit):
+            try:
+                res = self.db.resource.post_json(path='_bulk_docs',
+                                                 body={ 'docs': self.bulk})
+            except Exception as e:
+                logger.error('Error while saving bulk_docs in db: {}'.format(
+                    e.message
+                ))
+                for doc in self.bulk:
+                    self.add_to_retry_queue()
+            logger.info('Save bulk docs to db.')
+            self.bulk = []
+            for r in res[2]:
+                try:
+                    if r['ok'] == True:
+                        continue
+                except KeyError:
+                    logger.debug('{} {} skiped with reason: {}'.format(
+                        self.config['resource'][:-1].title(), r['id'],
+                        r['reason']))
+                    if r['reason'] != 'New doc with oldest dateModified.':
+                        self.add_to_retry_queue({'id': r['id']})
+                        self.log_dict['add_to_retry'] += 1
+                    else:
+                        continue
+            self.start_time = datetime.now()
 
 
     def _run(self):
@@ -212,10 +265,12 @@ class ResourceItemWorker(Greenlet):
                 self.log_dict['not_found_count'] += 1
                 continue
 
-            # Save/Update resource item in db
-            self._save_to_db(resource_item, queue_resource_item,
+            # Add docs to bulk
+            self._add_to_bulk(resource_item, queue_resource_item,
                              resource_item_doc)
 
+            # Save/Update docs in db
+            self._save_bulk_docs()
 
     def shutdown(self):
         self.exit = True

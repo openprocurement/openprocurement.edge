@@ -1,0 +1,114 @@
+{
+"data": {
+"status": "cancelled",
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"complaintPeriod": {
+"startDate": "2016-10-04T17:14:37.580782+03:00",
+"endDate": "2016-10-04T17:16:23.488021+03:00"
+},
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"faxNumber": "288-92-68",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"telephone": "280-29-31"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"eligible": true,
+"bid_id": "ae2a3f9ccc7f488ca02c4dd61cc0d726",
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"complaints": [
+{
+"status": "cancelled",
+"relatedLot": "3d5bd59d1de74f1c83f9dde13376b828",
+"documents": [
+{
+"author": "complaint_owner",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"url": "https://public.docs-sandbox.openprocurement.org/get/d8634b15e6f04dd0adbe3518bb4963b6?Prefix=004c6ef8995d401d94fc15fc92485a94%2Fdb8c4cd39a81472087c4f44880f91a4f&KeyID=1331dc52&Signature=a2Jr0loQBZUYf0FGzmwKb8FwVW1rUlZUz5U07tfShb0Q9qcvkCoXvsKvGHbP07zWY6Hi1pQAopqHmWJ4bgH5DQ%253D%253D",
+"title": "d-5d686adeveroiVpiTX.docx",
+"documentOf": "tender",
+"datePublished": "2016-09-06T00:10:49.932739+03:00",
+"dateModified": "2016-09-06T00:10:49.932763+03:00",
+"id": "db8c4cd39a81472087c4f44880f91a4f"
+}
+],
+"description": "Вилічка коськання утиритися утинок лихота держиво компанійський переплачувати білошка порхавка нороха п'яно різнити друженько.",
+"tendererActionDate": "2016-09-06T00:11:44.696775+03:00",
+"author": {
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"faxNumber": "288-92-68",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"telephone": "280-29-31"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"postalCode": "01015",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"resolutionType": "resolved",
+"resolution": "Атака поперетоплювати держиво фарисей прокормитися убраний тудою гудити ушнипитися тараракання наблювати заведисвіток покволом.",
+"title": "Лаверджет прахтика переплутувати мандрика.",
+"satisfied": false,
+"dateEscalated": "2016-09-06T00:12:26.183055+03:00",
+"dateAnswered": "2016-09-06T00:11:44.696753+03:00",
+"tendererAction": "Дитинонька штучний четверть хобза пофальшувати а кто ето сделал? вимірювати постоячка приторжити віявки ядерний ядерний дзуґа.",
+"dateSubmitted": "2016-09-06T00:10:55.229505+03:00",
+"complaintID": "UA-2016-09-05-000476.3",
+"date": "2016-09-06T00:13:00.050786+03:00",
+"dateCanceled": "2016-09-06T00:13:40.205696+03:00",
+"cancellationReason": "cancelled",
+"type": "complaint",
+"id": "c2a9a67e05314669a3c578043cfa91ba"
+}
+],
+"qualified": true,
+"date": "2016-10-04T17:16:23.529429+03:00",
+"documents": [
+{
+"language": "uk",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"url": "https://public.docs-sandbox.openprocurement.org/get/5162339ca3e04470b852284aae0834cb?Prefix=000e4610a6cb461e9c25e45974979bf1%2F889ba5a3d0f345939213cb0cd4bbd5cc&KeyID=1331dc52&Signature=4juoay5w6cEGTrOFHKfJZLy1TwZrtChe0OpOga%2FrDBeQdRM0p7paLoF5UE9qt0kMZjpk0pcU9eRvfAraZ5RRAw%253D%253D",
+"title": "d-d27953c6etOErmNf.docx",
+"documentOf": "tender",
+"datePublished": "2016-10-04T17:16:11.398807+03:00",
+"dateModified": "2016-10-04T17:16:11.398832+03:00",
+"id": "889ba5a3d0f345939213cb0cd4bbd5cc"
+}
+],
+"id": "f0d5fd00743b46668f6b589496ad73eb"
+}
+}

@@ -1,0 +1,133 @@
+{
+    "data": {
+        "status": "active",
+        "documents": [
+            {
+                "hash": "md5:6e11b0473788428c9560441165d5ae7d",
+                "description": "",
+                "format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "url": "https://public.docs-sandbox.openprocurement.org/get/937879bb9e2f4daf8d9c3e2dd7695b7b?KeyID=1331dc52&Signature=09SZqCsc8YsucV7oPa7WarYJA%2FwDJ0UtC7WrfeJ2svrZb2CcqEZfvXon%252B8IE%252BOf1uEbV%252BHq13y6%2FiFt3A%252B7wDg%253D%253D",
+                "title": "test (6th copy).docx",
+                "documentOf": "tender",
+                "datePublished": "2016-12-30T12:32:42.742665+02:00",
+                "documentType": "contractSigned",
+                "dateModified": "2016-12-30T12:32:42.742688+02:00",
+                "id": "d130ea7f3d89433fa8e4d6d3011d7028"
+            },
+            {
+                "hash": "md5:6e11b0473788428c9560441165d5ae7d",
+                "description": "",
+                "format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "url": "https://public.docs-sandbox.openprocurement.org/get/dcb7c296da234ebc924370e263847728?KeyID=1331dc52&Signature=rOWQ4r240odAxuK4%2F%2FWceiADhFZXEnXnztb5pz1pqknmqu4J%2FFcOYWABW%252BEt4C7K4F%252BjovkJGH70CL%252BfGtOjCA%253D%253D",
+                "title": "test (6th copy).docx",
+                "documentOf": "tender",
+                "datePublished": "2016-12-30T12:47:19.589366+02:00",
+                "documentType": "contractSigned",
+                "dateModified": "2016-12-30T12:47:19.589392+02:00",
+                "id": "99669df3e394496fa611def83ca8642b"
+            }
+        ],
+        "suppliers": [
+            {
+                "contactPoint": {
+                    "faxNumber": "",
+                    "telephone": "123412341",
+                    "name": "gg gg",
+                    "email": "gg@gg.gg"
+                },
+                "identifier": {
+                    "scheme": "UA-EDR",
+                    "id": "00002222",
+                    "legalName": "testpostsecond"
+                },
+                "name": "testpostsecond",
+                "address": {
+                    "postalCode": "11111",
+                    "countryName": "Україна",
+                    "streetAddress": "вул. Хрещатик, буд.1, офіс 777",
+                    "region": "м.Київ",
+                    "locality": "М.КИЇВ"
+                }
+            }
+        ],
+        "value": {
+            "currency": "UAH",
+            "amount": 27000,
+            "valueAddedTaxIncluded": true
+        },
+        "items": [
+            {
+                "relatedLot": "1841aac67cfe43b29f00d8617fd16891",
+                "description": "testAlex2",
+                "classification": {
+                    "scheme": "CPV",
+                    "description": "Газети, періодичні спеціалізовані та інші періодичні видання і журнали",
+                    "id": "22200000-2"
+                },
+                "additionalClassifications": [
+                    {
+                        "scheme": "ДКПП",
+                        "id": "22.19",
+                        "description": " Вироби ґумові, інші"
+                    }
+                ],
+                "deliveryLocation": {
+                    "latitude": "",
+                    "longitude": ""
+                },
+                "deliveryAddress": {
+                    "postalCode": "02222",
+                    "countryName": "Україна",
+                    "streetAddress": "adsfd dasffdsa",
+                    "region": "м.Київ",
+                    "locality": "М.КИЇВ"
+                },
+                "deliveryDate": {
+                    "endDate": "2017-01-04T00:00:00+02:00"
+                },
+                "id": "86a56d60026e4013aef0e78f5fdff990",
+                "unit": {
+                    "code": "H87",
+                    "name": "\tшт.\t"
+                },
+                "quantity": 2
+            }
+        ],
+        "contractNumber": "654567",
+        "period": {
+            "startDate": "2016-12-31T00:00:00+02:00",
+            "endDate": "2017-01-11T00:00:00+02:00"
+        },
+        "dateSigned": "2016-12-30T12:34:00+02:00",
+        "dateModified": "2016-12-30T14:18:17.550763+02:00",
+        "procuringEntity": {
+            "kind": "defense",
+            "name": "testzak",
+            "address": {
+                "postalCode": "11111",
+                "countryName": "Україна",
+                "streetAddress": "вул. Хрещатик, буд.1, офіс 777",
+                "region": "м.Київ",
+                "locality": "М.КИЇВ"
+            },
+            "contactPoint": {
+                "faxNumber": "",
+                "telephone": "342141231412",
+                "name": "aa aa",
+                "email": "aa@aa.aa"
+            },
+            "identifier": {
+                "scheme": "UA-EDR",
+                "legalName_en": "en testzak",
+                "id": "00055555",
+                "legalName": "testzak"
+            },
+            "name_en": "en testzak"
+        },
+        "contractID": "UA-2016-12-30-000022-1-11",
+        "awardID": "e8b276baf1cc4fe482d7c9d89912fd12",
+        "owner": "public-bid.com.ua",
+        "id": "a4ec232cfb1f46f5a91bb823a316cd7b",
+        "tender_id": "bdab2879b1d341fdbb3f6e442932d3d4"
+    }
+}

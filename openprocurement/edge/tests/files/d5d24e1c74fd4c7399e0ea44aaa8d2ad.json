@@ -1,0 +1,95 @@
+{
+"data": {
+"status": "cancelled",
+"documents": [
+{
+"language": "uk",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"url": "https://public.docs-sandbox.openprocurement.org/get/692f2fadda834236881a95119c50d969?Prefix=97cdf9109f3e46df94be09ab1a3ae6d9%2Fff45158cca2e46209dd080674dea25ae&KeyID=1331dc52&Signature=LnTTN3BqxgL%2FmyKS2EHLJkVZ6h8cv6NcLUq08Se747lXA6c%252B0lSU46EqEdP0xJUambN14F4JF6exBLXW1YgGBw%253D%253D",
+"title": "ЦСК которые поддерживаем.docx",
+"documentOf": "tender",
+"datePublished": "2016-04-21T08:41:24.991172+03:00",
+"documentType": "contractNotice",
+"dateModified": "2016-04-21T08:41:24.991197+03:00",
+"id": "ff45158cca2e46209dd080674dea25ae"
+}
+],
+"items": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"description": "i-39770fc2: Періодичні видання оригінальні на 2016 рік (газети України, журнали України, журнали Росії)",
+"classification": {
+"scheme": "CPV",
+"description": "Газети, періодичні спеціалізовані та інші періодичні видання і журнали",
+"id": "22200000-2"
+},
+"description_en": "Test item #0",
+"additionalClassifications": [
+{
+"scheme": "ДКПП",
+"id": "58.13",
+"description": "Послуги щодо видавання газет"
+}
+],
+"deliveryLocation": {
+"latitude": 50.4270971,
+"longitude": 30.5198371
+},
+"deliveryAddress": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"countryName_ru": "Украина",
+"postalCode": "03150"
+},
+"deliveryDate": {
+"endDate": "2016-11-02T15:37:03.191247+03:00"
+},
+"description_ru": "i-0e083821: Периодические издания оригинала в 2016 году (газет Украина, журналов Украины, журналов  России)",
+"id": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"unit": {
+"code": "H87",
+"name": "штуки"
+},
+"quantity": 127
+}
+],
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"faxNumber": "288-92-68",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"telephone": "280-29-31"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"date": "2016-10-04T17:16:23.529429+03:00",
+"awardID": "f0d5fd00743b46668f6b589496ad73eb",
+"id": "d5d24e1c74fd4c7399e0ea44aaa8d2ad",
+"contractID": "UA-2016-10-04-000315-1"
+}
+}

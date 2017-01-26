@@ -32,31 +32,42 @@ from .workers import ResourceItemWorker
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_QUEUE_TIMEOUT = 3
-DEFAULT_WORKERS_MIN = 1
-DEFAULT_WORKERS_MAX = 3
-DEFAULT_RETRY_WORKERS_MIN = 1
-DEFAULT_RETRY_WORKERS_MAX = 2
-DEFAULT_FILTER_WORKERS_COUNT = 1
-DEFAULT_RETRY_TIMEOUT = 5
-DEFAULT_WORKERS_SLEEP = 5
-DEFAULT_WATCH_INTERVAL = 10
-DEFAULT_RETRIES_COUNT = 10
-DEFAULT_RESOURCE = 'tenders'
-DEFAULT_USER_AGENT = 'edge_' + DEFAULT_RESOURCE + '.client'
-DEFAULT_COUCHDB_URL = 'http://127.0.0.1:5984'
-DEFAULT_COUCHDB_NAME = 'edge_db'
-DEFAULT_LOGDB_NAME = 'logs_db'
-DEFAULT_RESOURCE_ITEMS_LIMIT = 100
-DEFAULT_RESOURCE_ITEMS_QUEUE_SIZE = 102
-DEFAULT_RETRY_RESOURCE_ITEMS_QUEUE_SIZE = -1
-DEFAULT_WORKERS_INC_THRESHOLD = 90
-DEFAULT_WORKERS_DEC_THRESHOLD = 30
-DEFAULT_CLIENT_INC_STEP_TIMEOUT = 0.1
-DEFAULT_CLIENT_DEC_STEP_TIMEOUT = 0.02
-DEFAULT_DROP_THRESHOLD_CLIENT_COOKIES = 2
-DEFAULT_QUEUES_CONTROLLER_TIMEOUT = 60
+WORKER_CONFIG = {
+    'resource': 'tenders',
+    'client_inc_step_timeout': 0.1,
+    'client_dec_step_timeout': 0.02,
+    'drop_threshold_client_cookies': 2,
+    'worker_sleep': 5,
+    'retry_default_timeout': 3,
+    'retries_count': 10,
+    'queue_timeout': 3,
+    'bulk_save_limit': 5,
+    'bulk_save_interval': 5
+}
 
+DEFAULTS = {
+    'workers_inc_threshold': 75,
+    'workers_dec_threshold': 35,
+    'workers_min': 1,
+    'workers_max': 3,
+    'workers_pool': 3,
+    'retry_workers_min': 1,
+    'retry_workers_max': 2,
+    'retry_workers_pool': 2,
+    'retry_resource_items_queue_size': -1,
+    'filter_workers_count': 1,
+    'watch_interval': 10,
+    'user_agent': 'edge.multi',
+    'log_db_name': 'logs_db',
+    'resource_items_queue_size': 10000,
+    'resource_items_limit': 1000,
+    'queues_controller_timeout': 60,
+    'filter_workers_pool': 1,
+    'bulk_query_interval': 5,
+    'bulk_query_limit': 1000,
+    'couch_url': 'http://127.0.0.1:5984',
+    'db_name': 'edge_db'
+}
 
 class DataBridgeConfigError(Exception):
     pass
@@ -76,37 +87,19 @@ class EdgeDataBridge(object):
         self.retrievers_params = self.config_get('retrievers_params')
 
         # Workers settings
-        self.workers_config['resource'] = self.config_get('resource') or DEFAULT_RESOURCE
-        self.workers_config['client_inc_step_timeout'] = self.config_get('client_inc_step_timeout') or DEFAULT_CLIENT_INC_STEP_TIMEOUT
-        self.workers_config['client_dec_step_timeout'] = self.config_get('client_dec_step_timeout') or DEFAULT_CLIENT_DEC_STEP_TIMEOUT
-        self.workers_config['drop_threshold_client_cookies'] = self.config_get('drop_threshold_client_cookies') or DEFAULT_DROP_THRESHOLD_CLIENT_COOKIES
-        self.workers_config['worker_sleep'] = self.config_get('worker_sleep') or DEFAULT_WORKERS_SLEEP
-        self.workers_config['retry_default_timeout'] = self.config_get('retry_default_timeout') or DEFAULT_RETRY_TIMEOUT
-        self.workers_config['retries_count'] = self.config_get('retries_count') or DEFAULT_RETRIES_COUNT
-        self.workers_config['queue_timeout'] = self.config_get('queue_timeout') or DEFAULT_QUEUE_TIMEOUT
+        for key in WORKER_CONFIG:
+            self.workers_config[key] = self.config_get(key) or WORKER_CONFIG[key]
 
-        self.workers_inc_threshold = self.config_get('workers_inc_threshold') or DEFAULT_WORKERS_INC_THRESHOLD
-        self.workers_dec_threshold = self.config_get('workers_dec_threshold') or DEFAULT_WORKERS_DEC_THRESHOLD
-        self.workers_min = self.config_get('workers_min') or DEFAULT_WORKERS_MIN
-        self.workers_max = self.config_get('workers_max') or DEFAULT_WORKERS_MAX
+        # Init config
+        for key in DEFAULTS:
+            setattr(self, key, self.config_get(key) or DEFAULTS[key])
+
+        # Pools
         self.workers_pool = gevent.pool.Pool(self.workers_max)
-
-        # Retry workers settings
-        self.retry_workers_min = self.config_get('retry_workers_min') or DEFAULT_RETRY_WORKERS_MIN
-        self.retry_workers_max = self.config_get('retry_workers_max') or DEFAULT_RETRY_WORKERS_MAX
         self.retry_workers_pool = gevent.pool.Pool(self.retry_workers_max)
-
-        self.retry_resource_items_queue_size = self.config_get('retry_resource_items_queue_size') or DEFAULT_RETRY_RESOURCE_ITEMS_QUEUE_SIZE
-
-        self.filter_workers_count = self.config_get('filter_workers_count') or DEFAULT_FILTER_WORKERS_COUNT
-        self.watch_interval = self.config_get('watch_interval') or DEFAULT_WATCH_INTERVAL
-        self.user_agent = self.config_get('user_agent') or DEFAULT_USER_AGENT
-        self.log_db_name = self.config_get('logs_db') or DEFAULT_LOGDB_NAME
-        self.resource_items_queue_size = self.config_get('resource_items_queue_size') or DEFAULT_RESOURCE_ITEMS_QUEUE_SIZE
-        self.resource_items_limit = self.config_get('resource_items_limit') or DEFAULT_RESOURCE_ITEMS_LIMIT
-        self.queues_controller_timeout = self.config_get('queues_controller_timeout') or DEFAULT_QUEUES_CONTROLLER_TIMEOUT
-
         self.filter_workers_pool = gevent.pool.Pool(self.filter_workers_count)
+
+        # Queues
         if self.resource_items_queue_size == -1:
             self.resource_items_queue = Queue()
         else:
@@ -119,16 +112,11 @@ class EdgeDataBridge(object):
 
         self.process = psutil.Process(os.getpid())
 
-        # Variables for statistic
-        self.log_dict['not_actual_docs_count'] = 0
-        self.log_dict['update_documents'] = 0
-        self.log_dict['save_documents'] = 0
-        self.log_dict['add_to_retry'] = 0
-        self.log_dict['droped'] = 0
-        self.log_dict['skiped'] = 0
-        self.log_dict['add_to_resource_items_queue'] = 0
-        self.log_dict['exceptions_count'] = 0
-        self.log_dict['not_found_count'] = 0
+        # Default values for statistic variables
+        for key in ('not_actual_docs_count', 'update_documents', 'droped',
+                    'add_to_resource_items_queue', 'save_documents', 'skiped',
+                    'add_to_retry', 'exceptions_count', 'not_found_count'):
+            self.log_dict[key] = 0
 
         if self.api_host != '' and self.api_host is not None:
             api_host = urlparse(self.api_host)
@@ -138,9 +126,6 @@ class EdgeDataBridge(object):
         else:
             raise DataBridgeConfigError('In config dictionary empty or missing'
                                         ' \'tenders_api_server\'')
-
-        self.couch_url = self.config_get('couch_url') or DEFAULT_COUCHDB_URL
-        self.db_name = self.config_get('public_db') or DEFAULT_COUCHDB_NAME
 
         server = Server(self.couch_url, session=Session(retry_delays=range(10)))
 
@@ -161,18 +146,19 @@ class EdgeDataBridge(object):
             }
         }
         self.logger = LogsCollector(collector_config)
+        self.view_path ='_design/{}/_view/by_dateModified'.format(
+            self.workers_config['resource'])
 
     def config_get(self, name):
         try:
             return self.config.get('main').get(name)
-        except AttributeError as e:
+        except AttributeError:
             raise DataBridgeConfigError('In config dictionary missed section'
                                         ' \'main\'')
 
-
     def create_api_client(self):
         client_user_agent = self.user_agent + '/' + uuid.uuid4().hex
-        timeout = 0
+        timeout = 0.1
         while 1:
             try:
                 api_client = APIClient(host_url=self.api_host,
@@ -188,10 +174,11 @@ class EdgeDataBridge(object):
                 break
             except RequestFailed as e:
                 self.log_dict['exceptions_count'] += 1
-                logger.error('Failed start api_client with status code {}'.format(
-                    e.status_code
+                logger.error(
+                    'Failed start api_client with status code {}'.format(
+                        e.status_code
                 ))
-                timeout += 0.1
+                timeout = timeout * 2
                 sleep(timeout)
 
     def fill_api_clients_queue(self):
@@ -199,18 +186,33 @@ class EdgeDataBridge(object):
             self.create_api_client()
 
     def fill_resource_items_queue(self):
+        start_time = datetime.now()
+        keys = []
+        input_dict = {}
         for resource_item in get_resource_items(
             host=self.api_host, version=self.api_version, key='',
             extra_params={'mode': '_all_', 'limit': self.resource_items_limit},
             resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
-            if self.resource_items_filter(resource_item['id'],
-                                     resource_item['dateModified']):
-                self.resource_items_queue.put({
-                    'id': resource_item['id'],
-                    'dateModified': resource_item['dateModified']})
-                self.log_dict['add_to_resource_items_queue'] += 1
-            else:
-                self.log_dict['skiped'] += 1
+
+            keys.append(resource_item['dateModified'])
+            input_dict[resource_item['id']] = resource_item['dateModified']
+            if (len(keys) > self.bulk_query_limit or
+                    (datetime.now() - start_time).total_seconds() > self.bulk_query_interval):
+                rows = self.db.view(self.view_path, keys=keys)
+                resp_dict = { k.id: k.key for k in rows }
+                for item_id, date_modified in input_dict.items():
+                    if item_id in resp_dict and date_modified == resp_dict[item_id]:
+                        self.log_dict['skiped'] += 1
+                    else:
+                        self.resource_items_queue.put({
+                            'id': item_id,
+                            'dateModified': date_modified
+                        })
+                        self.log_dict['add_to_resource_items_queue'] += 1
+                keys = []
+                input_dict = {}
+                start_time = datetime.now()
+
 
     def resource_items_filter(self, r_id, r_date_modified):
         try:

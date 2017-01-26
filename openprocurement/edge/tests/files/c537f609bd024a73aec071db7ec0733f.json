@@ -1,0 +1,22 @@
+{
+"data": {
+    "status": "active",
+    "documents": [
+        {
+            "hash": "md5:22760b3c2e25afae590ad7e66efb65bb",
+            "description": "Вивагом переплачувати кантурь головистий кіска брухо сив.",
+            "format": "application/msword",
+            "url": "http://public.docs-sandbox.ea.openprocurement.org/get/b3d904252d474591bd39cef5c66b10ec?KeyID=1816418e&Signature=%252BkrZJn%252Bich%252BznpXkjuB9Uj%252BlXjBmdDZ7gz3%252BdkgwNew9TGryqc210tBhuihev5vq5SQhTaz0lOslIEx%2F5LD6CA%253D%253D",
+            "title": "d-9d7cfeceiustoIqtqqK.doc",
+            "documentOf": "tender",
+            "datePublished": "2016-11-18T00:18:53.739195+02:00",
+            "dateModified": "2016-11-18T00:18:53.739235+02:00",
+            "id": "793b7fc243f4427cb3bd06063396783d"
+        }
+    ],
+    "reason": "Побабіти вичухатися понагодовувати продам гараж обліплювання самопрядка зажати належати.",
+    "date": "2016-11-18T00:18:55.439071+02:00",
+    "cancellationOf": "tender",
+    "id": "c537f609bd024a73aec071db7ec0733f"
+}
+}

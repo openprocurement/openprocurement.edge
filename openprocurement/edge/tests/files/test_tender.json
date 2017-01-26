@@ -1,0 +1,1104 @@
+{
+"_id": "000e4610a6cb461e9c25e45974979bf1",
+"procurementMethod": "open",
+"numberOfBids": 2,
+"awardPeriod": {
+"startDate": "2016-10-04T17:14:37.580782+03:00",
+"endDate": "2016-10-04T17:16:36.957256+03:00"
+},
+"features": [
+{
+"code": "f19efff715d249dc810b0a8a4c109a0d",
+"description": "Кантурь звеселяти начерпати пороспорюватися наблювати двойлезний мандрика покропити грішитель відмащувати присилити клятьба покоржавіти пообробляти справник.",
+"title": "f-a941f3f2: Облудність згучатися уторжитися.",
+"enum": [
+{
+"value": 0.05,
+"title": "бердник"
+},
+{
+"value": 0.01,
+"title": "переплачувати"
+},
+{
+"value": 0,
+"title": "вадко"
+}
+],
+"title_en": "f-fce3c7f5: Qui praesentium harum qui asperiores.",
+"relatedItem": "422eab9551d84b7d9469ed4f1640b2bc",
+"title_ru": "f-283413da: Амэт ажжынтиор льаборэж номинатй аккузата эффикеэнди латины.",
+"featureOf": "lot"
+},
+{
+"code": "d238a8b370384dbb853137ee0ccdc4b1",
+"description": "Кукіль руненце продам гараж стирта оповідь відрубність кізка.",
+"title": "f-f94d2d95: Пазуха уміцняти поволовщина простирядно.",
+"enum": [
+{
+"value": 0.05,
+"title": "жмикрутський"
+},
+{
+"value": 0.01,
+"title": "загатистий"
+},
+{
+"value": 0,
+"title": "салтан"
+}
+],
+"title_en": "f-9853eeb2: Omnis sed a maiores.",
+"title_ru": "f-24a73f46: Пырикюлёз тальэ кевёбюж вэл майыжтатйж зймюл.",
+"featureOf": "tenderer"
+},
+{
+"code": "a71b0035b7d14033aaaa73cefeffa90a",
+"description": "Виречи перетлівати виламуватися повиводити білошка чепурити вистріпати.",
+"title": "f-e1d968f4: Лементіти ураз II сокирник.",
+"enum": [
+{
+"value": 0.05,
+"title": "імшедь"
+},
+{
+"value": 0.01,
+"title": "простирядно"
+},
+{
+"value": 0,
+"title": "полаторжитися"
+}
+],
+"title_en": "f-8ec8f124: Ea explicabo optio nulla corrupti quasi.",
+"relatedItem": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"title_ru": "f-17c6a05e: Пэр экз либриз рыпрэхэндунт ку одео дольор.",
+"featureOf": "item"
+}
+],
+"complaintPeriod": {
+"startDate": "2016-10-04T15:38:03.180726+03:00",
+"endDate": "2016-10-04T16:10:03.180726+03:00"
+},
+"enquiryPeriod": {
+"startDate": "2016-10-04T15:38:03.180726+03:00",
+"clarificationsUntil": "2016-10-04T16:07:03.180726+03:00",
+"endDate": "2016-10-04T16:04:03.180726+03:00",
+"invalidationDate": "2016-10-04T15:55:04.372468+03:00"
+},
+"qualifications": [
+{
+"status": "active",
+"documents": [
+{
+"language": "uk",
+"title": "d-070fe7b4doloreEwbedl.pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/dcd53fd7216940dcab1e27d2fd494779?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fa794e1b59c9242718196a575ee1526d5&KeyID=1331dc52&Signature=98gnIl9ERmJZ3qUopQzAurOpCsM1OX5q3eNkC5w4SGwTqqV8GOfHFcZ7XHnwV8R1xmOCfkxAAdCEKkM9jO3wDw%253D%253D",
+"format": "application/pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T16:21:02.780569+03:00",
+"id": "a794e1b59c9242718196a575ee1526d5",
+"dateModified": "2016-10-04T16:21:02.780594+03:00"
+}
+],
+"eligible": true,
+"date": "2016-10-04T16:21:34.245515+03:00",
+"qualified": true,
+"bidID": "d391b38ce13b44fe88c832bb64ec7f3c",
+"complaints": [
+{
+"status": "pending",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"title": "Microsoft Excel.xlsx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/15173afb1a474e36b5dcce5e0c8f7870?Prefix=01f99e1b37714c91a55e5e9f7c5e7fb8%2Fc623089caea44d798a6ce61240e42915&KeyID=1331dc52&Signature=ZhSb5j39G8CWkcwNJUu9Ue6j10KUaszXK2ucwiFmPRtXME%2F9cmiLh0KOKjx6dxqWTKhgADVe%2FavRcPCejITNBA%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+"documentOf": "tender",
+"datePublished": "2016-07-21T12:33:17.569079+03:00",
+"id": "c623089caea44d798a6ce61240e42915",
+"dateModified": "2016-07-21T12:33:17.569104+03:00"
+}
+],
+"description": "Скарга на рішення передкваліфікації",
+"author": {
+"contactPoint": {
+"telephone": "+380636549832",
+"email": "pbuser2@ukr.net",
+"name": "Стрижак Володимир Сергійович"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "1593578912",
+"legalName": "ЗАТ \"Банкінтерсервіс\""
+},
+"name": "ЗАТ \"Банкінтерсервіс\"",
+"address": {
+"postalCode": "65987",
+"countryName": "УКРАЇНА",
+"streetAddress": "просп. Московський, буд. 45",
+"region": "м.Київ",
+"locality": "ОБОЛОНСЬКИЙ"
+}
+},
+"title": "Скарга на рішення передкваліфікації",
+"dateSubmitted": "2016-07-21T12:33:25.579934+03:00",
+"complaintID": "UA-2016-07-21-000052-2.21",
+"date": "2016-07-21T12:33:25.594857+03:00",
+"type": "complaint",
+"id": "911f5d9e924f4408acf0292848085ca3"
+}
+],
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"id": "efa0d365d009477b840d0c0422489abc"
+},
+{
+"status": "cancelled",
+"documents": [
+{
+"language": "uk",
+"title": "d-3466f583nobisNYe_Y0.pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/c4d71fa9973c4d1f9723e2865df93f1e?Prefix=000e4610a6cb461e9c25e45974979bf1%2F446cb3922c0948268d436bd515c457b6&KeyID=1331dc52&Signature=5kSbkkdT%2FL2w4rFCaQ7wZ6m4Rd8sKvoaN4fofY9oLzhDexjrHxeKB7BeAhvCtFVMCcVYDw3asLieRF5SWJrKCg%253D%253D",
+"format": "application/pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T16:21:44.851311+03:00",
+"id": "446cb3922c0948268d436bd515c457b6",
+"dateModified": "2016-10-04T16:21:44.851336+03:00"
+}
+],
+"eligible": false,
+"date": "2016-10-04T16:22:07.225658+03:00",
+"qualified": false,
+"bidID": "ae2a3f9ccc7f488ca02c4dd61cc0d726",
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"id": "4b626f245dec414ab4903007221b3cbe"
+},
+{
+"status": "active",
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"eligible": true,
+"qualified": true,
+"bidID": "ae2a3f9ccc7f488ca02c4dd61cc0d726",
+"date": "2016-10-04T16:22:13.849449+03:00",
+"id": "9e5aac4e68f84fdbb15bd46688acfa4e"
+}
+],
+"submissionMethod": "electronicAuction",
+"complaints": [
+{
+"status": "resolved",
+"tendererActionDate": "2016-10-04T15:49:28.956116+03:00",
+"description": "Підставляти дик матюнка порхавка охотка позсапувати уторжитися.",
+"title": "Спонаджувати докука вимірювати.",
+"resolutionType": "resolved",
+"type": "claim",
+"author": {
+"contactPoint": {
+"url": "http://www.uspa.gov.ua/",
+"telephone": "380512508797",
+"email": "shyrikm@ukr.net",
+"name": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)",
+"faxNumber": "380512508818"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "38728444",
+"legalName": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)"
+},
+"name": "МФ ДП \"АМПУ\" (адміністрація Миколаївського МП)",
+"address": {
+"postalCode": "54020",
+"countryName": "Україна",
+"streetAddress": "вулиця Млинна, 23, 23",
+"region": "Миколаївська область",
+"locality": "Миколаїв"
+}
+},
+"satisfied": true,
+"id": "c495b3ea6fb04ed6ba438cad2e91d817",
+"dateAnswered": "2016-10-04T15:49:28.956095+03:00",
+"tendererAction": "Продам Гараж іконний побабіти чуркати замішанина напругом недоношениця.",
+"dateSubmitted": "2016-10-04T15:48:53.879979+03:00",
+"complaintID": "UA-2016-10-04-000315.1",
+"date": "2016-10-04T15:49:59.080682+03:00",
+"resolution": "Чужинонька докірний відмащувати весілчанин мама я в телевізорі підсмалити панюга присилити цибульний усподі чудар призначати утинок лаверджет підбурити буба рідкий ревучий попутник грішитель.",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"title": "d-9778c553tenetur9lnWy5.pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/7f2ca60af15d48a7b1596e984e244f38?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fa8779280923f43888b428ecbc20fc0af&KeyID=1331dc52&Signature=Gr7bieQ%2Fqlk9pcqO0aOZjYpkAAjhXLf0Lb0%2FBsMyr%2FoXnxBTO4AsQCECqpCLMWal5%2F076VTALrtLRU7CNon6BQ%253D%253D",
+"format": "application/pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:48:50.154650+03:00",
+"id": "a8779280923f43888b428ecbc20fc0af",
+"dateModified": "2016-10-04T15:48:50.154675+03:00"
+}
+]
+},
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"status": "resolved",
+"tendererActionDate": "2016-10-04T15:51:40.001130+03:00",
+"description": "Повиводити воратися оздобний попівський дитинонька гильце спонаджувати побабіти.",
+"author": {
+"contactPoint": {
+"url": "http://www.pcenter.org.ua",
+"telephone": "5228755",
+"email": "pcenter_ekonomist@ukr.net",
+"name": "Пуніна Ірина Пилипівна",
+"faxNumber": "5228745"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "22964365",
+"legalName": "Перинатальний центр м.Києва"
+},
+"name": "Перинатальний центр м.Києва",
+"address": {
+"postalCode": "03150",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"resolutionType": "resolved",
+"type": "claim",
+"title": "Запащекувати победрина ужисько.",
+"satisfied": true,
+"id": "e6bb4cb3c0dd490386bec1286ddbd8db",
+"dateAnswered": "2016-10-04T15:51:40.001110+03:00",
+"tendererAction": "Кремпілець обдарити свид священників перевалити порхавка узголов'я поназбірувати наблювати шалювати зросливий хрокнути муркотати.",
+"dateSubmitted": "2016-10-04T15:51:03.002870+03:00",
+"complaintID": "UA-2016-10-04-000315.2",
+"date": "2016-10-04T15:52:12.409191+03:00",
+"resolution": "Москалитися базікало лінтюга жерлистий буніти попороскошувати постогнувати крамарювати кізка пересолоджувати відробляти рукописний кишкатий ураз II за-що-раз кормитися гаїр ракляцький рострясти набірати.",
+"documents": [
+{
+"author": "complaint_owner",
+"language": "uk",
+"title": "d-47f1f942solutaizwVPr.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/4c0bdac0ae6044f0a4ab8ec19b998940?Prefix=000e4610a6cb461e9c25e45974979bf1%2F9c827ea09cfa409085aa5c4c5d4a27ef&KeyID=1331dc52&Signature=VRbjEKcXlU3g6BvWuq1qkJWcKLxLggre4Vhvs0k65rNg1HNR5R%252BFKLBfIJYW9FflKGJAsQ0BxUcvCJoN4ay%252BAQ%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:50:58.708905+03:00",
+"id": "9c827ea09cfa409085aa5c4c5d4a27ef",
+"dateModified": "2016-10-04T15:50:58.708944+03:00"
+}
+]
+}
+],
+"awardCriteria": "lowestCost",
+"questions": [
+{
+"description": "Відсаджувати постогнувати прокадити райдуга непорадний накотити I дривотень тоскно.",
+"author": {
+"contactPoint": {
+"url": "http://gorsvet.kiev.ua",
+"telephone": "0444580520",
+"email": "kievgorsvet_z@ukr.net",
+"name": "Зайченко Марина Григорівна",
+"faxNumber": "0444580520"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "03360905",
+"legalName": "Комунальне підприємство електромереж зовнішнього освітлення м. Києва «Київміськсвітло»"
+},
+"name": "Комунальне підприємство електромереж зовнішнього освітлення м. Києва «Київміськсвітло»",
+"address": {
+"postalCode": "03680",
+"countryName": "Україна",
+"streetAddress": "вулиця Виборзька, 40, 95",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"title": "q-cfe94eb5: Доборотися весело закуштрати любомудр.",
+"date": "2016-10-04T15:44:33.664017+03:00",
+"answer": "Шахрайський відмащувати мандрика утинок победрина підрийка погубитель скитки недомова полаторжитися бродити гупалка борозний переріз парастас гарбариха виречи голубаня походистий потріпки карасір киць десяточок сисак пороспікатися прокадити попереривати драб виправа насупереки десяточок кізка покропити держиво обчірати позламувати четверть підсмалити пацьор займати повіджимати перетлівати позламувати клямати суддя покволом проплинути потаска спонаджувати.",
+"id": "17b545a8b8fb4c19ad6ec309874de571",
+"questionOf": "tender"
+},
+{
+"description": "Непорадний коханка самопрядка кантурь повислужувати злизувати попомуштрувати закут повислужувати карасір сисак ошаліти чужинонька байоро.",
+"author": {
+"contactPoint": {
+"url": "http://gorsvet.kiev.ua",
+"telephone": "0444580520",
+"email": "kievgorsvet_z@ukr.net",
+"name": "Зайченко Марина Григорівна",
+"faxNumber": "0444580520"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "03360905",
+"legalName": "Комунальне підприємство електромереж зовнішнього освітлення м. Києва «Київміськсвітло»"
+},
+"name": "Комунальне підприємство електромереж зовнішнього освітлення м. Києва «Київміськсвітло»",
+"address": {
+"postalCode": "03680",
+"countryName": "Україна",
+"streetAddress": "вулиця Виборзька, 40, 95",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"title": "q-2542f151: Дочиста змерлий.",
+"relatedItem": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"date": "2016-10-04T15:45:52.508277+03:00",
+"answer": "Голубаня обаринок ошпарити печерування оповідь муничитися нечесаний цяв! скандзюбити обшити запащекувати понагодовувати жидел коханка виґуляри самопрядка спонаджувати пообробляти дуранляси дивовизія спонаджувати привіт людино познакомитися заперти цяв! мимо підсмажувати пофальшувати гудити попівський кулага поназбірувати базікало нечулий вивагом вісьмина справник загатистий замічати.",
+"id": "eed7db08f0e64da3b2f3117d218711c1",
+"questionOf": "item"
+},
+{
+"description": "Кіска киць фарфур дешперувати збірослов розжарити гаріль обшити насупереки руненце.",
+"author": {
+"contactPoint": {
+"url": "http://www.ruo-obolon.kiev.ua/",
+"telephone": "0444109322",
+"email": "katorgina@ukr.net",
+"name": "Циганок Анджела Михайлівна",
+"faxNumber": "0444197359"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "37445442",
+"legalName": "Управління освіти Оболонської районної в місті Києві державної адміністрації"
+},
+"name": "Управління освіти Оболонської районної в місті Києві державної адміністрації",
+"address": {
+"postalCode": "04211",
+"countryName": "Україна",
+"streetAddress": "Оболонський проспект, 11А, 8А",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"title": "q-8b7de348: Діркуватий матюнка жерлистий.",
+"relatedItem": "422eab9551d84b7d9469ed4f1640b2bc",
+"date": "2016-10-04T15:47:06.611214+03:00",
+"answer": "Бісовщина суддя руненце буба гостиночка тараракання білошка лаверджет гильце коректа перемовляти повіджимати солодкомовний рахубно таляровий муркотати заглитнутися прикриватися варило клаптик підрийка багатолотовий корупціон з неціновими показниками літній понагодовувати переріз чуркати позламувати підсмалити вистріпати сужена шалювати шамшити псалтирка притягати галаснути нороха згучатися опадати ласкавий п'яно хапанина свистіння держиво дрова.",
+"id": "92cbea1350464cbca7cd85ef8a2cdb1e",
+"questionOf": "lot"
+}
+],
+"owner": "test.quintagroup.com",
+"title_en": "[TESTING]",
+"id": "000e4610a6cb461e9c25e45974979bf1",
+"tenderPeriod": {
+"startDate": "2016-10-04T15:38:03.180726+03:00",
+"endDate": "2016-10-04T16:14:03.180726+03:00"
+},
+"documents": [
+{
+"language": "uk",
+"title": "d-a7fb68d8omnisbOAcDE.doc",
+"url": "https://public.docs-sandbox.openprocurement.org/get/5f5511f39c51404fb7cf791ddfa375d7?Prefix=000e4610a6cb461e9c25e45974979bf1%2F9744e927e7a94f089497645c4115e9d5&KeyID=1331dc52&Signature=y4NapSwc129Q4k1tFucd17DSxMI%252BrH3xYpvE2UDkSKeUxUHsO935o83QgnNo%252Bh6rZgE78ortEL9LAhH8TwwKDw%253D%253D",
+"format": "application/msword",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:39:13.222482+03:00",
+"id": "9744e927e7a94f089497645c4115e9d5",
+"dateModified": "2016-10-04T15:39:13.222506+03:00"
+},
+{
+"language": "uk",
+"title": "d-f8307223etqwqdGW.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/8b060add87d5410daf6f8e571b126f22?Prefix=000e4610a6cb461e9c25e45974979bf1%2F18550fb4c68b49b9a1bde355779f314c&KeyID=1331dc52&Signature=cLsJG1l8NaA0ujT24MobtMwL5JEY%2FxQNUOU%2FVmDFDallLFvFRYYarVTv%252BPKvr3FBrZvF%2Fxck1%2FYRvFYWmjMRBA%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "lot",
+"datePublished": "2016-10-04T15:39:18.267977+03:00",
+"id": "18550fb4c68b49b9a1bde355779f314c",
+"relatedItem": "422eab9551d84b7d9469ed4f1640b2bc",
+"dateModified": "2016-10-04T15:39:18.268001+03:00"
+},
+{
+"language": "uk",
+"title": "audit_000e4610a6cb461e9c25e45974979bf1_422eab9551d84b7d9469ed4f1640b2bc.yaml",
+"url": "https://public.docs-sandbox.openprocurement.org/get/46c37fd0215e4ce1bf919e79524fcf9b?Prefix=000e4610a6cb461e9c25e45974979bf1%2F35cf8c39391b473088d14ff13444ba3a&KeyID=1331dc52&Signature=3YWJnaDl87JMTELN5tOCewnZaFnKUnwmneQp5VtPTO1SuBIR62%252BGE3TqnTypV1%2FOzYE92GbfmEYX6iAf6SZZBg%253D%253D",
+"format": "text/plain",
+"documentOf": "tender",
+"datePublished": "2016-10-04T17:14:36.523302+03:00",
+"id": "35cf8c39391b473088d14ff13444ba3a",
+"dateModified": "2016-10-04T17:14:36.523326+03:00"
+}
+],
+"title": "[ТЕСТУВАННЯ] Заселювати походистий самоук обшити покволом.",
+"lots": [
+{
+"status": "complete",
+"description": "За-Що-Раз новонаставлений докірний покотити курча заґавитися драгун бездухий четверть а кто ето сделал? пересолоджувати прочолок.",
+"title": "l-7f608f6e: Пороспікатися відхвалюватися висповідатися пошкарубитися.",
+"minimalStep": {
+"currency": "UAH",
+"amount": 518164810.9,
+"valueAddedTaxIncluded": true
+},
+"auctionPeriod": {
+"startDate": "2016-10-04T16:53:36+03:00",
+"endDate": "2016-10-04T17:14:37.522055+03:00"
+},
+"title_en": "l-0c345316: Accusamus maxime dolorum repudiandae libero omnis numquam.",
+"value": {
+"currency": "UAH",
+"amount": 24123714815.08,
+"valueAddedTaxIncluded": true
+},
+"auctionUrl": "https://auction-sandbox.openprocurement.org/tenders/000e4610a6cb461e9c25e45974979bf1_422eab9551d84b7d9469ed4f1640b2bc",
+"title_ru": "l-c69ab661: Зймюл майыжтатйж мюндй толлйт ножтро зигнёфэрумквюы.",
+"date": "2016-10-04T17:26:46.097286+03:00",
+"id": "422eab9551d84b7d9469ed4f1640b2bc"
+}
+],
+"qualificationPeriod": {
+"startDate": "2016-10-04T16:16:45.786756+03:00",
+"endDate": "2016-10-04T16:27:34.895240+03:00"
+},
+"tenderID": "UA-2016-10-04-000315",
+"description_ru": "Вёжи фабулаз оффекйяж шынчебюз эюрйпйдяч рыпрэхэндунт дыфяниэбаж дэльэнйт пэртинакёа рыпрэхэндунт.",
+"dateModified": "2016-11-10T21:14:39.084344+02:00",
+"status": "complete",
+"description": "Проднювати гарбариха різнити грун москалитися приймачка переплачувати кованка порозгризати розштовхати полаторжитися облізок.",
+"contracts": [
+{
+"status": "cancelled",
+"documents": [
+{
+"language": "uk",
+"title": "ЦСК которые поддерживаем.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/692f2fadda834236881a95119c50d969?Prefix=97cdf9109f3e46df94be09ab1a3ae6d9%2Fff45158cca2e46209dd080674dea25ae&KeyID=1331dc52&Signature=LnTTN3BqxgL%2FmyKS2EHLJkVZ6h8cv6NcLUq08Se747lXA6c%252B0lSU46EqEdP0xJUambN14F4JF6exBLXW1YgGBw%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "tender",
+"datePublished": "2016-04-21T08:41:24.991172+03:00",
+"documentType": "contractNotice",
+"id": "ff45158cca2e46209dd080674dea25ae",
+"dateModified": "2016-04-21T08:41:24.991197+03:00"
+}
+],
+"items": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"description": "i-39770fc2: Періодичні видання оригінальні на 2016 рік (газети України, журнали України, журнали Росії)",
+"classification": {
+"scheme": "CPV",
+"description": "Газети, періодичні спеціалізовані та інші періодичні видання і журнали",
+"id": "22200000-2"
+},
+"description_en": "Test item #0",
+"additionalClassifications": [
+{
+"scheme": "ДКПП",
+"id": "58.13",
+"description": "Послуги щодо видавання газет"
+}
+],
+"deliveryLocation": {
+"latitude": 50.4270971,
+"longitude": 30.5198371
+},
+"deliveryAddress": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"countryName_ru": "Украина",
+"postalCode": "03150"
+},
+"deliveryDate": {
+"endDate": "2016-11-02T15:37:03.191247+03:00"
+},
+"description_ru": "i-0e083821: Периодические издания оригинала в 2016 году (газет Украина, журналов Украины, журналов  России)",
+"id": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"unit": {
+"code": "H87",
+"name": "штуки"
+},
+"quantity": 127
+}
+],
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"date": "2016-10-04T17:16:23.529429+03:00",
+"awardID": "f0d5fd00743b46668f6b589496ad73eb",
+"id": "d5d24e1c74fd4c7399e0ea44aaa8d2ad",
+"contractID": "UA-2016-10-04-000315-1"
+},
+{
+"status": "active",
+"items": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"description": "i-39770fc2: Періодичні видання оригінальні на 2016 рік (газети України, журнали України, журнали Росії)",
+"classification": {
+"scheme": "CPV",
+"description": "Газети, періодичні спеціалізовані та інші періодичні видання і журнали",
+"id": "22200000-2"
+},
+"description_en": "Test item #0",
+"additionalClassifications": [
+{
+"scheme": "ДКПП",
+"id": "58.13",
+"description": "Послуги щодо видавання газет"
+}
+],
+"deliveryLocation": {
+"latitude": 50.4270971,
+"longitude": 30.5198371
+},
+"deliveryAddress": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"countryName_ru": "Украина",
+"postalCode": "03150"
+},
+"deliveryDate": {
+"endDate": "2016-11-02T15:37:03.191247+03:00"
+},
+"description_ru": "i-0e083821: Периодические издания оригинала в 2016 году (газет Украина, журналов Украины, журналов  России)",
+"id": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"unit": {
+"code": "H87",
+"name": "штуки"
+},
+"quantity": 127
+}
+],
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"dateSigned": "2016-10-04T17:26:46.070155+03:00",
+"date": "2016-10-04T17:26:46.097286+03:00",
+"awardID": "31a9f323e25442b1a0ecb8b0ac7553f4",
+"id": "71ba60ff286f45a6959f7f93fbac3529",
+"contractID": "UA-2016-10-04-000315-2"
+}
+],
+"procurementMethodDetails": "quick, accelerator=1440",
+"procurementMethodType": "aboveThresholdEU",
+"description_en": "Voluptate enim numquam velit rerum consectetur quod sint deserunt qui laudantium rerum cupiditate magnam.",
+"awards": [
+{
+"status": "cancelled",
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"eligible": true,
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"complaintPeriod": {
+"startDate": "2016-10-04T17:14:37.580782+03:00",
+"endDate": "2016-10-04T17:16:23.488021+03:00"
+},
+"bid_id": "ae2a3f9ccc7f488ca02c4dd61cc0d726",
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"id": "f0d5fd00743b46668f6b589496ad73eb",
+"qualified": true,
+"date": "2016-10-04T17:16:23.529429+03:00",
+"complaints": [
+{
+"status": "cancelled",
+"relatedLot": "3d5bd59d1de74f1c83f9dde13376b828",
+"documents": [
+{
+"author": "complaint_owner",
+"title": "d-5d686adeveroiVpiTX.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/d8634b15e6f04dd0adbe3518bb4963b6?Prefix=004c6ef8995d401d94fc15fc92485a94%2Fdb8c4cd39a81472087c4f44880f91a4f&KeyID=1331dc52&Signature=a2Jr0loQBZUYf0FGzmwKb8FwVW1rUlZUz5U07tfShb0Q9qcvkCoXvsKvGHbP07zWY6Hi1pQAopqHmWJ4bgH5DQ%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "tender",
+"datePublished": "2016-09-06T00:10:49.932739+03:00",
+"id": "db8c4cd39a81472087c4f44880f91a4f",
+"dateModified": "2016-09-06T00:10:49.932763+03:00"
+}
+],
+"description": "Вилічка коськання утиритися утинок лихота держиво компанійський переплачувати білошка порхавка нороха п'яно різнити друженько.",
+"tendererActionDate": "2016-09-06T00:11:44.696775+03:00",
+"author": {
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"postalCode": "01015",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"region": "місто Київ",
+"locality": "Київ"
+}
+},
+"resolutionType": "resolved",
+"type": "complaint",
+"title": "Лаверджет прахтика переплутувати мандрика.",
+"satisfied": false,
+"dateEscalated": "2016-09-06T00:12:26.183055+03:00",
+"dateAnswered": "2016-09-06T00:11:44.696753+03:00",
+"tendererAction": "Дитинонька штучний четверть хобза пофальшувати а кто ето сделал? вимірювати постоячка приторжити віявки ядерний ядерний дзуґа.",
+"dateSubmitted": "2016-09-06T00:10:55.229505+03:00",
+"complaintID": "UA-2016-09-05-000476.3",
+"date": "2016-09-06T00:13:00.050786+03:00",
+"dateCanceled": "2016-09-06T00:13:40.205696+03:00",
+"cancellationReason": "cancelled",
+"resolution": "Атака поперетоплювати держиво фарисей прокормитися убраний тудою гудити ушнипитися тараракання наблювати заведисвіток покволом.",
+"id": "c2a9a67e05314669a3c578043cfa91ba"
+}
+],
+"documents": [
+{
+"language": "uk",
+"title": "d-d27953c6etOErmNf.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/5162339ca3e04470b852284aae0834cb?Prefix=000e4610a6cb461e9c25e45974979bf1%2F889ba5a3d0f345939213cb0cd4bbd5cc&KeyID=1331dc52&Signature=4juoay5w6cEGTrOFHKfJZLy1TwZrtChe0OpOga%2FrDBeQdRM0p7paLoF5UE9qt0kMZjpk0pcU9eRvfAraZ5RRAw%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "tender",
+"datePublished": "2016-10-04T17:16:11.398807+03:00",
+"id": "889ba5a3d0f345939213cb0cd4bbd5cc",
+"dateModified": "2016-10-04T17:16:11.398832+03:00"
+}
+]
+},
+{
+"status": "active",
+"lotID": "422eab9551d84b7d9469ed4f1640b2bc",
+"eligible": true,
+"suppliers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"complaintPeriod": {
+"startDate": "2016-10-04T17:16:23.488053+03:00",
+"endDate": "2016-10-04T17:26:36.956969+03:00"
+},
+"bid_id": "ae2a3f9ccc7f488ca02c4dd61cc0d726",
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"id": "31a9f323e25442b1a0ecb8b0ac7553f4",
+"qualified": true,
+"date": "2016-10-04T17:16:36.978033+03:00",
+"documents": [
+{
+"language": "uk",
+"title": "d-32dc620fexcepturi0_VZ1N.doc",
+"url": "https://public.docs-sandbox.openprocurement.org/get/dc48008eeb5a4c9da8f309f58552bccb?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fd4faf03c02d04563be9b881f041b5886&KeyID=1331dc52&Signature=6MFP%2FMR9FWqss4qsOAMq7%2F6yDkzZBsEFMLUKz5AjIvO2nsv9cKx6ZtmAAV9Vn7zvQ33%252BrJnGvbMC9ScuDPGmDg%253D%253D",
+"format": "application/msword",
+"documentOf": "tender",
+"datePublished": "2016-10-04T17:16:29.990490+03:00",
+"id": "d4faf03c02d04563be9b881f041b5886",
+"dateModified": "2016-10-04T17:16:29.990515+03:00"
+}
+]
+}
+],
+"date": "2016-10-04T17:26:46.097286+03:00",
+"doc_type": "Tender",
+"submissionMethodDetails": "quick",
+"items": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"description": "i-39770fc2: Періодичні видання оригінальні на 2016 рік (газети України, журнали України, журнали Росії)",
+"classification": {
+"scheme": "CPV",
+"description": "Газети, періодичні спеціалізовані та інші періодичні видання і журнали",
+"id": "22200000-2"
+},
+"description_en": "Test item #0",
+"additionalClassifications": [
+{
+"scheme": "ДКПП",
+"id": "58.13",
+"description": "Послуги щодо видавання газет"
+}
+],
+"deliveryLocation": {
+"latitude": 50.4270971,
+"longitude": 30.5198371
+},
+"deliveryAddress": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Івана Федорова, 9, 5А",
+"countryName_ru": "Украина",
+"postalCode": "03150"
+},
+"deliveryDate": {
+"endDate": "2016-11-02T15:37:03.191247+03:00"
+},
+"description_ru": "i-0e083821: Периодические издания оригинала в 2016 году (газет Украина, журналов Украины, журналов  России)",
+"id": "81e2d278fdf34d37af76e6b7ab2f00d0",
+"unit": {
+"code": "H87",
+"name": "штуки"
+},
+"quantity": 127
+}
+],
+"bids": [
+{
+"status": "active",
+"documents": [
+{
+"confidentiality": "public",
+"language": "uk",
+"title": "d-a827f6aedoloremqueKKzHiJ.docx",
+"url": "https://public.docs-sandbox.openprocurement.org/get/74d48a41dfc54348b38ccfb2e3cefafb?Prefix=000e4610a6cb461e9c25e45974979bf1%2Ffb5e261dd3cb48489d5f6735663d968e&KeyID=1331dc52&Signature=aFB1iDDMkNBVrphqABt%2FzfBqtR5wvHchRTreeKIvOG35weaceFx9Uv%252BFsQlx3ocQXr2GIhFFghS19Q4frpTGBA%253D%253D",
+"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:11.363456+03:00",
+"id": "fb5e261dd3cb48489d5f6735663d968e",
+"dateModified": "2016-10-04T15:54:11.363478+03:00"
+},
+{
+"confidentiality": "buyerOnly",
+"language": "uk",
+"title": "d-3a709288ealBSNN2.pdf",
+"url": "https://public.api-sandbox.openprocurement.org/api/2.3/tenders/000e4610a6cb461e9c25e45974979bf1/bids/d391b38ce13b44fe88c832bb64ec7f3c/documents/fb5e261dd3cb48489d5f6735663d968e?download=9ce5841b7dcb4b109a63625600d327df",
+"confidentialityRationale": "Страта проднювати чекман лакейча повислужувати відчалювати прахтика підсудній.",
+"format": "application/pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:11.363456+03:00",
+"id": "fb5e261dd3cb48489d5f6735663d968e",
+"dateModified": "2016-10-04T15:54:15.909612+03:00"
+}
+],
+"parameters": [
+{
+"code": "f19efff715d249dc810b0a8a4c109a0d",
+"value": 0
+},
+{
+"code": "d238a8b370384dbb853137ee0ccdc4b1",
+"value": 0.01
+},
+{
+"code": "a71b0035b7d14033aaaa73cefeffa90a",
+"value": 0
+}
+],
+"eligibilityDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"title": "d-676bef34consequaturZpgKiE.doc",
+"url": "https://public.docs-sandbox.openprocurement.org/get/627b08aed9bf4ed58e0b1ff305598dfb?Prefix=000e4610a6cb461e9c25e45974979bf1%2Fbad95fc7808448898f2a7555c9b17c0b&KeyID=1331dc52&Signature=8GNi4gXEcHLfXyypcRexB2J09O9n6Cax8ou55GMJ857stTnOmE6Mz%2F8rKkUG2X0fqbtstJU02NBn3wAWSL37Bw%253D%253D",
+"format": "application/msword",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:58.359179+03:00",
+"id": "bad95fc7808448898f2a7555c9b17c0b",
+"dateModified": "2016-10-04T15:54:58.359201+03:00"
+}
+],
+"selfEligible": true,
+"id": "d391b38ce13b44fe88c832bb64ec7f3c",
+"lotValues": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"date": "2016-10-04T15:54:07.116548+03:00",
+"status": "active",
+"value": {
+"currency": "UAH",
+"amount": 9340030788.14,
+"valueAddedTaxIncluded": true
+},
+"participationUrl": "https://auction-sandbox.openprocurement.org/tenders/000e4610a6cb461e9c25e45974979bf1_422eab9551d84b7d9469ed4f1640b2bc/login?bidder_id=d391b38ce13b44fe88c832bb64ec7f3c&hash=0aab9cb32157818961c3340a70cda647075ccc17"
+}
+],
+"selfQualified": true,
+"financialDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"title": "d-d099f56denim6vwixW.doc",
+"url": "https://public.docs-sandbox.openprocurement.org/get/dec4769e6b4e4d3a95fb15353907b927?Prefix=000e4610a6cb461e9c25e45974979bf1%2F4c98d31f48704b44b17cdce8025702ca&KeyID=1331dc52&Signature=DObQVGs3r%2Fh5lwzRvMKYAWrebC%2FePg3tDbD2HKy03lrh%252Bm4UZaQzhsqTMoY%252BsAKMOeVaxK%252BBEP8PqAhAAJTQCw%253D%253D",
+"format": "application/msword",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:50.353302+03:00",
+"id": "4c98d31f48704b44b17cdce8025702ca",
+"dateModified": "2016-10-04T15:54:50.353327+03:00"
+}
+],
+"tenderers": [
+{
+"contactPoint": {
+"url": "http://e-tender.biz",
+"telephone": "457-98-17",
+"email": "poliklinika1solom@yandex.ua",
+"name": "Чепіков Олександр Миколайович",
+"faxNumber": "408-23-33"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "04593340",
+"legalName": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва"
+},
+"name": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "проспект Космонавта Комарова, 36, 4А",
+"countryName_ru": "Украина",
+"postalCode": "03067"
+}
+}
+],
+"date": "2016-10-04T15:53:56.160671+03:00",
+"qualificationDocuments": [
+{
+"confidentiality": "public",
+"language": "uk",
+"title": "d-8ff9a9adaliquidf5mBm5.pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/888cdfa680a3492383ee098d169244bc?Prefix=000e4610a6cb461e9c25e45974979bf1%2F1c9548d090f94f24837c7b39c041bc78&KeyID=1331dc52&Signature=Rwi2wWqeVMRj5V80%2FkmrH2pCYV4%2F%252Blz8RMHztQMEEMf5inB7J6ePP1tnSZNIyG672KhgvD0mvesuRDVgD3LsCQ%253D%253D",
+"format": "application/pdf",
+"documentOf": "tender",
+"datePublished": "2016-10-04T15:54:54.435133+03:00",
+"id": "1c9548d090f94f24837c7b39c041bc78",
+"dateModified": "2016-10-04T15:54:54.435155+03:00"
+}
+]
+},
+{
+"status": "active",
+"parameters": [
+{
+"code": "f19efff715d249dc810b0a8a4c109a0d",
+"value": 0.01
+},
+{
+"code": "d238a8b370384dbb853137ee0ccdc4b1",
+"value": 0.01
+},
+{
+"code": "a71b0035b7d14033aaaa73cefeffa90a",
+"value": 0.01
+}
+],
+"selfEligible": true,
+"lotValues": [
+{
+"relatedLot": "422eab9551d84b7d9469ed4f1640b2bc",
+"date": "2016-10-04T15:54:41.085736+03:00",
+"status": "active",
+"value": {
+"currency": "UAH",
+"amount": 6975584142.96,
+"valueAddedTaxIncluded": true
+},
+"participationUrl": "https://auction-sandbox.openprocurement.org/tenders/000e4610a6cb461e9c25e45974979bf1_422eab9551d84b7d9469ed4f1640b2bc/login?bidder_id=ae2a3f9ccc7f488ca02c4dd61cc0d726&hash=05fc1f482c90565824b2e6d06f79fcc286c2ac47"
+}
+],
+"selfQualified": true,
+"tenderers": [
+{
+"contactPoint": {
+"url": "http://honchar.org.ua",
+"telephone": "280-29-31",
+"email": "chayka.pl@gmail.com",
+"name": "Полякова Лариса Михайлівна",
+"faxNumber": "288-92-68"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"id": "21657170",
+"legalName": "Національний центр народної культури \"Музей Івана Гончара\""
+},
+"name": "Національний центр народної культури \"Музей Івана Гончара\"",
+"address": {
+"locality": "Київ",
+"region": "місто Київ",
+"countryName_en": "Ukraine",
+"countryName": "Україна",
+"streetAddress": "вулиця Лаврська, 19",
+"countryName_ru": "Украина",
+"postalCode": "01015"
+}
+}
+],
+"date": "2016-10-04T15:54:41.085350+03:00",
+"id": "ae2a3f9ccc7f488ca02c4dd61cc0d726"
+}
+],
+"value": {
+"currency": "UAH",
+"amount": 24123714815.08,
+"valueAddedTaxIncluded": true
+},
+"minimalStep": {
+"currency": "UAH",
+"amount": 518164810.9,
+"valueAddedTaxIncluded": true
+},
+"mode": "test",
+"title_ru": "[ТЕСТИРОВАНИЕ] Multi-tiered dedicated leverage",
+"procuringEntity": {
+"kind": "general",
+"name": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва",
+"address": {
+"postalCode": "03067",
+"countryName": "Україна",
+"streetAddress": "проспект Космонавта Комарова, 36, 4А",
+"region": "місто Київ",
+"locality": "Київ"
+},
+"contactPoint": {
+"name": "Чепіков Олександр Миколайович",
+"url": "http://e-tender.biz",
+"telephone": "457-98-17",
+"faxNumber": "408-23-33",
+"name_en": "Concetta Hermiston",
+"email": "poliklinika1solom@yandex.ua",
+"availableLanguage": "en"
+},
+"identifier": {
+"scheme": "UA-EDR",
+"legalName_en": "Institution \"Vinnytsia City Council primary and secondary general school № 10\"",
+"id": "04593340",
+"legalName": "Комунальне некомерційне підприємство \"Консультативно-діагностичний центр\" Солом’янського району міста Києва"
+},
+"name_en": "Miss Thomasina Becker DVM"
+},
+"cancellations": [
+{
+"status": "active",
+"documents": [
+{
+"title": "zapros.pdf",
+"url": "https://public.docs-sandbox.openprocurement.org/get/ca3458d63930458ca7ad40313da37747?Prefix=5bea18896d02459685f6f9494ed1ec80%2Fe5d1cfd73fba43cc8296e7ac827eb269&KeyID=1331dc52&Signature=q%252ByGYaZwWQ5Qk5pl9ii20LyMYdl5o1RPRDsN6NNxSJXpm3Kdbv%2FqNTmSNZ4K%2FvTg%2FwDSlpcslTAz76VvYRhaAg%253D%253D",
+"format": "text/plain",
+"documentOf": "tender",
+"datePublished": "2016-04-20T20:16:56.376240+03:00",
+"id": "e5d1cfd73fba43cc8296e7ac827eb269",
+"dateModified": "2016-04-20T20:16:56.376266+03:00"
+}
+],
+"reason": "Тестирование",
+"reasonType": "cancelled",
+"date": "2016-04-20T20:16:55.662327+03:00",
+"cancellationOf": "tender",
+"id": "e6bd49d00bde4847b84e936489cf5df5"
+}
+]
+}
