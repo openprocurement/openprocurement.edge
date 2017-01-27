@@ -211,12 +211,12 @@ class ResourceItemWorker(Greenlet):
                     if r['ok'] == True:
                         continue
                 except KeyError:
-                    logger.debug('{} {} skiped with reason: {}'.format(
-                        self.config['resource'][:-1].title(), r['id'],
-                        r['reason']))
                     if r['reason'] != 'New doc with oldest dateModified.':
-                        self.add_to_retry_queue({'id': r['id']})
+                        self.add_to_retry_queue({'id': r['id'], 'dateModified': None})
                         self.log_dict['add_to_retry'] += 1
+                        logger.error('{} {} skiped with reason: {}'.format(
+                            self.config['resource'][:-1].title(), r['id'],
+                            r['reason']))
                     else:
                         continue
             self.start_time = datetime.now()
@@ -249,7 +249,7 @@ class ResourceItemWorker(Greenlet):
                 self.add_to_retry_queue({
                     'id': queue_resource_item['id'],
                     'dateModified': queue_resource_item['dateModified']
-                    })
+                })
                 logger.error('Error while getting resource item from couchdb: {}'.format(
                     e.message
                 ))
