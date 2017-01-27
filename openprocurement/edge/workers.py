@@ -192,7 +192,7 @@ class ResourceItemWorker(Greenlet):
             for r in res[2]:
                 try:
                     if r['ok'] == True:
-                        if int(r['rev'].split('-')[0]) > 1:
+                        if r['rev'].startswith("1-"):
                             self.log_dict['update_documents'] += 1
                             logger.info('Update {} {}'.format(
                                 self.config['resource'][:-1], r['id']))
