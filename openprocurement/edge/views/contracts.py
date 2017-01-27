@@ -92,7 +92,7 @@ class ContractsResource(APIResource):
         if limit:
             params['limit'] = limit
             pparams['limit'] = limit
-        limit = int(limit) if limit.isdigit() and (100 if fields else 1000) >= int(limit) > 0 else 100
+        limit = int(limit) if limit.isdigit() and 1000 >= int(limit) > 0 else 100
         descending = bool(self.request.params.get('descending'))
         offset = self.request.params.get('offset', '')
         if descending:

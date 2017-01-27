@@ -113,11 +113,10 @@ def main(global_config, **settings):
     if db_name not in server:
         server.create(db_name)
     db = server[db_name]
-    validate_doc = {
-        '_id': VALIDATE_BULK_DOCS_ID,
-        'validate_doc_update': VALIDATE_BULK_DOCS_UPDATE
-    }
-    db.save(validate_doc)
+    validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
+    if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
+        validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
+        db.save(validate_doc)
     # sync couchdb views
     # sync_design(db)
     config.registry.db = db

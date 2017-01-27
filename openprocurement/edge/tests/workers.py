@@ -283,31 +283,12 @@ class TestResourceItemWorker(unittest.TestCase):
                                     log_dict=self.log_dict,
                                     retry_resource_items_queue=retry_queue)
         worker.db = MagicMock()
-        # Skip test
-        self.assertEqual(worker.log_dict['skiped'], 0)
-        self.assertEqual(worker.log_dict['update_documents'], 0)
-        self.assertEqual(worker.log_dict['save_documents'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 0)
+
+        start_length = len(worker.bulk)
         worker._add_to_bulk(resource_item_dict, queue_resource_item,
                             resource_item_doc_dict)
-        self.assertEqual(worker.log_dict['skiped'], 1)
-        self.assertEqual(worker.log_dict['update_documents'], 0)
-        self.assertEqual(worker.log_dict['save_documents'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 0)
-
-        # Update test
-        resource_item_dict['dateModified'] = datetime.datetime.utcnow().isoformat()
-        worker._add_to_bulk(resource_item_dict, queue_resource_item,
-                            resource_item_doc_dict)
-        self.assertEqual(worker.log_dict['update_documents'], 1)
-        self.assertEqual(worker.log_dict['save_documents'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 0)
-
-        # Save test
-        worker._add_to_bulk(resource_item_dict, queue_resource_item,
-                           None)
-        self.assertEqual(worker.log_dict['save_documents'], 1)
-        self.assertEqual(worker.log_dict['exceptions_count'], 0)
+        end_length = len(worker.bulk)
+        self.assertGreater(end_length, start_length)
 
     def test_shutdown(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
