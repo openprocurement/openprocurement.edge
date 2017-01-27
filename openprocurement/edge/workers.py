@@ -170,24 +170,7 @@ class ResourceItemWorker(Greenlet):
                     resource_item_doc):
         resource_item['doc_type'] = self.config['resource'][:-1].title()
         resource_item['_id'] = resource_item['id']
-        if resource_item_doc:
-            resource_item['_rev'] = resource_item_doc['_rev']
-            if resource_item['dateModified'] > resource_item_doc['dateModified']:
-                logger.info('Update {} {}'.format(
-                    self.config['resource'][:-1], queue_resource_item['id']))
-                self.update_doc = True
-            else:
-                self.log_dict['skiped'] += 1
-                return
-        else:
-            logger.info('Save {} {}'.format(
-                self.config['resource'][:-1], queue_resource_item['id']))
-            self.update_doc = False
         self.bulk.append(resource_item)
-        if self.update_doc:
-            self.log_dict['update_documents'] += 1
-        else:
-            self.log_dict['save_documents'] += 1
         return
 
 
@@ -209,6 +192,14 @@ class ResourceItemWorker(Greenlet):
             for r in res[2]:
                 try:
                     if r['ok'] == True:
+                        if r['rev'].startswith("1-"):
+                            self.log_dict['update_documents'] += 1
+                            logger.info('Update {} {}'.format(
+                                self.config['resource'][:-1], r['id']))
+                        else:
+                            self.log_dict['save_documents'] += 1
+                            logger.info('Save {} {}'.format(
+                                self.config['resource'][:-1], r['id']))
                         continue
                 except KeyError:
                     if r['reason'] != 'New doc with oldest dateModified.':
@@ -218,6 +209,7 @@ class ResourceItemWorker(Greenlet):
                             self.config['resource'][:-1].title(), r['id'],
                             r['reason']))
                     else:
+                        self.log_dict['skiped'] += 1
                         continue
             self.start_time = datetime.now()
 
