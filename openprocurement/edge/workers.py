@@ -171,7 +171,7 @@ class ResourceItemWorker(Greenlet):
         resource_item['doc_type'] = self.config['resource'][:-1].title()
         resource_item['_id'] = resource_item['id']
         if resource_item_doc:
-            resource_item['_rev'] = resource_item_doc.rev
+            resource_item['_rev'] = resource_item_doc['_rev']
         self.bulk.append(resource_item)
         return
 
