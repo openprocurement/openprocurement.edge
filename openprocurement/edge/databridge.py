@@ -30,6 +30,7 @@ from gevent.queue import Queue, Empty
 from datetime import datetime
 from .workers import ResourceItemWorker
 
+
 logger = logging.getLogger(__name__)
 
 WORKER_CONFIG = {
@@ -41,7 +42,7 @@ WORKER_CONFIG = {
     'retry_default_timeout': 3,
     'retries_count': 10,
     'queue_timeout': 3,
-    'bulk_save_limit': 5,
+    'bulk_save_limit': 1000,
     'bulk_save_interval': 5
 }
 
@@ -187,29 +188,38 @@ class EdgeDataBridge(object):
 
     def fill_resource_items_queue(self):
         start_time = datetime.now()
-        keys = []
         input_dict = {}
         for resource_item in get_resource_items(
             host=self.api_host, version=self.api_version, key='',
             extra_params={'mode': '_all_', 'limit': self.resource_items_limit},
             resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
 
-            keys.append(resource_item['dateModified'])
             input_dict[resource_item['id']] = resource_item['dateModified']
-            if (len(keys) > self.bulk_query_limit or
+
+            logger.debug('Recieved from sync {}: {} {}'.format(
+                self.workers_config['resource'][:-1], resource_item['id'],
+                resource_item['dateModified']
+            ))
+            if (len(input_dict) > self.bulk_query_limit or
                     (datetime.now() - start_time).total_seconds() > self.bulk_query_interval):
-                rows = self.db.view(self.view_path, keys=keys)
-                resp_dict = { k.id: k.key for k in rows }
+                rows = self.db.view(self.view_path, keys=input_dict.values())
+                resp_dict = {k.id: k.key for k in rows}
                 for item_id, date_modified in input_dict.items():
                     if item_id in resp_dict and date_modified == resp_dict[item_id]:
                         self.log_dict['skiped'] += 1
+                        logger.debug('Ignored {} {}: SYNC - {}, EDGE - {}'.format(
+                            self.workers_config['resource'][:-1], item_id,
+                            date_modified, resp_dict[item_id]))
                     else:
                         self.resource_items_queue.put({
                             'id': item_id,
                             'dateModified': date_modified
                         })
+                        logger.debug('Put to main queue {}: {} {}'.format(
+                            self.workers_config['resource'][:-1], item_id,
+                            date_modified
+                        ))
                         self.log_dict['add_to_resource_items_queue'] += 1
-                keys = []
                 input_dict = {}
                 start_time = datetime.now()
 

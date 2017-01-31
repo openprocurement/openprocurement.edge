@@ -54,8 +54,12 @@ class LogsCollector(object):
                 raise LogsCollectorConfigError(e.message)
 
     def save(self, log_document):
-        self.db.save(log_document)
-        logger.info(self.dict_to_str_vpl(log_document))
+        try:
+            self.db.save(log_document)
+            logger.info(self.dict_to_str_vpl(log_document))
+        except Exception as e:
+            logger.critical('Error while saving logs to db: {}'.format(
+                e.message))
 
     def dict_to_str_vpl(self, d):
         return_str = ''
