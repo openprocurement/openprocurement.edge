@@ -299,7 +299,8 @@ class EdgeDataBridge(object):
                 if len(self.workers_pool) > self.workers_min:
                     wi = self.workers_pool.greenlets.pop()
                     wi.shutdown()
-            filled_resource_items_queue = int(self.resource_items_queue.qsize()/(self.resource_items_queue_size / 100))
+            filled_resource_items_queue = int(
+                self.resource_items_queue.qsize()/(self.resource_items_queue_size / 100))
             logger.info('Resource items queue filled on {} %'.format(filled_resource_items_queue))
             filled_retry_resource_items_queue = int(self.retry_resource_items_queue.qsize()/(self.retry_resource_items_queue_size / 100))
             logger.info('Retry resource items queue filled on {} %'.format(filled_retry_resource_items_queue))

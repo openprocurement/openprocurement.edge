@@ -152,8 +152,10 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             },
             'version': 1
         }
-        with self.assertRaises(DataBridgeConfigError):
+        with self.assertRaises(DataBridgeConfigError) as e:
              EdgeDataBridge(test_config)
+        self.assertEqual(e.exception.message, 'In config dictionary missed '
+                         'section \'main\'')
 
         # Create EdgeDataBridge object without variable 'resources_api_server' in config
         del test_config['mani']
@@ -165,20 +167,27 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'queue_size': 101
             }
         }
-        with self.assertRaises(DataBridgeConfigError):
+        with self.assertRaises(DataBridgeConfigError) as e:
             EdgeDataBridge(test_config)
-        with self.assertRaises(KeyError):
+        self.assertEqual(e.exception.message, 'In config dictionary empty or '
+                         'missing \'tenders_api_server\'')
+        with self.assertRaises(KeyError) as e:
             test_config['main']['resources_api_server']
+        self.assertEqual(e.exception.message, 'resources_api_server')
 
         # Create EdgeDataBridge object with empty resources_api_server
         test_config['main']['resources_api_server'] = ''
-        with self.assertRaises(DataBridgeConfigError):
+        with self.assertRaises(DataBridgeConfigError) as e:
             EdgeDataBridge(test_config)
+        self.assertEqual(e.exception.message, 'In config dictionary empty or '
+                         'missing \'tenders_api_server\'')
 
         # Create EdgeDataBridge object with invalid resources_api_server
         test_config['main']['resources_api_server'] = 'my_server'
-        with self.assertRaises(DataBridgeConfigError):
+        with self.assertRaises(DataBridgeConfigError) as e:
             EdgeDataBridge(test_config)
+        self.assertEqual(e.exception.message, 'Invalid \'tenders_api_server\' '
+                         'url.')
 
         test_config['main']['resources_api_server'] = 'https://lb.api-sandbox.openprocurement.org'
 
@@ -200,26 +209,30 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             mock_create.side_effect = DataBridgeConfigError('test error')
             with self.assertRaises(DataBridgeConfigError) as e:
                 bridge = EdgeDataBridge(test_config)
+            self.assertEqual(e.exception.message, 'test error')
 
         # Create EdgeDataBridge object with deleting config variables step by step
         bridge = EdgeDataBridge(test_config)
         self.assertEqual(type(bridge), EdgeDataBridge)
-        with self.assertRaises(KeyError):
+        with self.assertRaises(KeyError) as e:
             test_config['main']['couch_url']
+        self.assertEqual(e.exception.message, 'couch_url')
         del bridge
 
         del test_config['main']['resources_api_version']
         bridge = EdgeDataBridge(test_config)
         self.assertEqual(type(bridge), EdgeDataBridge)
-        with self.assertRaises(KeyError):
+        with self.assertRaises(KeyError) as e:
             test_config['main']['resources_api_version']
+        self.assertEqual(e.exception.message, 'resources_api_version')
         del bridge
 
         del test_config['main']['public_resources_api_server']
         bridge = EdgeDataBridge(test_config)
         self.assertEqual(type(bridge), EdgeDataBridge)
-        with self.assertRaises(KeyError):
+        with self.assertRaises(KeyError) as e:
             test_config['main']['public_resources_api_server']
+        self.assertEqual(e.exception.message, 'public_resources_api_server')
         del bridge
         server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
         del server[test_config['main']['db_name']]
@@ -272,16 +285,19 @@ class TestEdgeDataBridge(TenderBaseWebTest):
     @patch('openprocurement.edge.databridge.APIClient')
     def test_gevent_watcher(self, mock_APIClient, mock_riw_spawn, mock_spawn):
         bridge = EdgeDataBridge(self.config)
-        self.assertEqual(bridge.filter_workers_pool.free_count(), bridge.filter_workers_count)
-        self.assertEqual(bridge.workers_pool.free_count(), bridge.workers_max)
-        self.assertEqual(bridge.retry_workers_pool.free_count(), bridge.retry_workers_max)
+        self.assertEqual(bridge.filter_workers_pool.free_count(),
+                         bridge.filter_workers_count)
+        self.assertEqual(bridge.workers_pool.free_count(),
+                         bridge.workers_max)
+        self.assertEqual(bridge.retry_workers_pool.free_count(),
+                         bridge.retry_workers_max)
         bridge.gevent_watcher()
         self.assertEqual(bridge.filter_workers_pool.free_count(), 0)
-        self.assertEqual(bridge.workers_pool.free_count(), bridge.workers_max - bridge.workers_min)
-        self.assertEqual(bridge.retry_workers_pool.free_count(), bridge.retry_workers_max - bridge.retry_workers_min)
+        self.assertEqual(bridge.workers_pool.free_count(),
+                         bridge.workers_max - bridge.workers_min)
+        self.assertEqual(bridge.retry_workers_pool.free_count(),
+                         bridge.retry_workers_max - bridge.retry_workers_min)
         del bridge
-
-
 
     @patch('openprocurement.edge.databridge.APIClient')
     def test_create_api_client(self, mock_APIClient):
@@ -296,7 +312,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.api_clients_queue.qsize(), 1)
 
         del bridge
-
 
     def test_resource_items_filter(self):
         bridge = EdgeDataBridge(self.config)

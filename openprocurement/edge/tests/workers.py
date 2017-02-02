@@ -3,12 +3,17 @@ import datetime
 import unittest
 import uuid
 from couchdb import Server, ResourceNotFound
+from copy import deepcopy
 from gevent import sleep
 from gevent.queue import Queue
 from mock import MagicMock, patch
 from munch import munchify
 from openprocurement_client.client import TendersClient as APIClient
-from openprocurement_client.exceptions import InvalidResponse, RequestFailed
+from openprocurement_client.exceptions import (
+    InvalidResponse,
+    RequestFailed,
+    ResourceNotFound as RNF
+)
 from openprocurement.edge.workers import ResourceItemWorker
 from socket import error
 
@@ -192,6 +197,7 @@ class TestResourceItemWorker(unittest.TestCase):
         # Not actual document form public
         item['dateModified'] = datetime.datetime.utcnow().isoformat()
         api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
         self.assertEqual(api_client['request_interval'], 0)
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
@@ -199,23 +205,27 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(worker.log_dict['add_to_retry'], 1)
         sleep(worker.config['retry_default_timeout'] * 2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 1)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
 
         # InvalidResponse
         mock_api_client.get_resource_item.side_effect = InvalidResponse('invalid response')
         self.assertEqual(self.log_dict['exceptions_count'], 0)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 1)
         api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
         self.assertEqual(worker.log_dict['exceptions_count'], 1)
         self.assertEqual(worker.log_dict['add_to_retry'], 2)
         sleep(worker.config['retry_default_timeout'] * 2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 2)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
 
         # RequestFailed status_code=429
         mock_api_client.get_resource_item.side_effect = RequestFailed(
             munchify({'status_code': 429}))
         api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
         self.assertEqual(api_client['request_interval'], 0)
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
@@ -223,12 +233,16 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(worker.log_dict['add_to_retry'], 3)
         sleep(worker.config['retry_default_timeout'] * 2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 3)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
         api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
         self.assertEqual(api_client['request_interval'], worker.config['client_inc_step_timeout'])
 
         # RequestFailed status_code=429 with drop cookies
         api_client['request_interval'] = 2
         public_item = worker._get_resource_item_from_public(api_client, item)
+        sleep(api_client['request_interval'])
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
         self.assertEqual(public_item, None)
         self.assertEqual(api_client['request_interval'], 0)
         self.assertEqual(worker.log_dict['exceptions_count'], 3)
@@ -239,13 +253,31 @@ class TestResourceItemWorker(unittest.TestCase):
         # RequestFailed with status_code not equal 429
         mock_api_client.get_resource_item.side_effect = RequestFailed(
             munchify({'status_code': 404}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
         self.assertEqual(api_client['request_interval'], 0)
         self.assertEqual(worker.log_dict['exceptions_count'], 4)
         self.assertEqual(worker.log_dict['add_to_retry'], 5)
         sleep(worker.config['retry_default_timeout'] * 2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 5)
+
+        # ResourceNotFound
+        mock_api_client.get_resource_item.side_effect = RNF(
+            munchify({'status_code': 404}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(api_client['request_interval'], 0)
+        self.assertEqual(worker.log_dict['exceptions_count'], 5)
+        self.assertEqual(worker.log_dict['add_to_retry'], 6)
+        self.assertEqual(worker.log_dict['not_found_count'], 1)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 6)
 
         # Exception
         api_client = worker._get_api_client_dict()
@@ -253,13 +285,12 @@ class TestResourceItemWorker(unittest.TestCase):
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
         self.assertEqual(api_client['request_interval'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 5)
-        self.assertEqual(worker.log_dict['add_to_retry'], 6)
+        self.assertEqual(worker.log_dict['exceptions_count'], 6)
+        self.assertEqual(worker.log_dict['add_to_retry'], 7)
         sleep(worker.config['retry_default_timeout'] * 2)
-        self.assertEqual(worker.retry_resource_items_queue.qsize(), 6)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 7)
 
         del worker
-
 
     def test__add_to_bulk(self):
         retry_queue = Queue()
@@ -289,6 +320,67 @@ class TestResourceItemWorker(unittest.TestCase):
                             resource_item_doc_dict)
         end_length = len(worker.bulk)
         self.assertGreater(end_length, start_length)
+
+        start_length = len(worker.bulk)
+        new_resource_item_dict = deepcopy(resource_item_dict)
+        new_resource_item_dict['dateModified'] = datetime.datetime.utcnow().isoformat()
+        worker._add_to_bulk(new_resource_item_dict, queue_resource_item,
+                            resource_item_doc_dict)
+        end_length = len(worker.bulk)
+        self.assertEqual(start_length, end_length)
+
+    def test__save_bulk_docs(self):
+        self.worker_config['bulk_save_limit'] = 3
+        retry_queue = Queue()
+        worker = ResourceItemWorker(config_dict=self.worker_config,
+                                    log_dict=self.log_dict,
+                                    retry_resource_items_queue=retry_queue)
+        doc_id_1 = uuid.uuid4().hex
+        doc_id_2 = uuid.uuid4().hex
+        doc_id_3 = uuid.uuid4().hex
+        doc_id_4 = uuid.uuid4().hex
+        date_modified = datetime.datetime.utcnow().isoformat()
+        worker.bulk = {
+            doc_id_1: {'id': doc_id_1, 'dateModified': date_modified},
+            doc_id_2: {'id': doc_id_2, 'dateModified': date_modified},
+            doc_id_3: {'id': doc_id_3, 'dateModified': date_modified},
+            doc_id_4: {'id': doc_id_4, 'dateModified': date_modified}
+        }
+        update_return_value = [
+            (True, doc_id_1, '1-'+uuid.uuid4().hex),
+            (True, doc_id_2, '2-'+uuid.uuid4().hex),
+            (False, doc_id_3, Exception(u'New doc with oldest dateModified.')),
+            (False, doc_id_4, Exception(u'Document update conflict.'))
+        ]
+        worker.db = MagicMock()
+        worker.db.update.return_value = update_return_value
+
+        self.assertEqual(worker.log_dict['update_documents'], 0)
+        self.assertEqual(worker.log_dict['save_documents'], 0)
+        self.assertEqual(worker.log_dict['skiped'], 0)
+        self.assertEqual(worker.log_dict['add_to_retry'], 0)
+
+        # Test success response from couchdb
+        worker._save_bulk_docs()
+        self.assertEqual(worker.log_dict['update_documents'], 1)
+        self.assertEqual(worker.log_dict['save_documents'], 1)
+        self.assertEqual(worker.log_dict['skiped'], 1)
+        self.assertEqual(worker.log_dict['add_to_retry'], 1)
+
+        # Test failed response from couchdb
+        worker.db.update.side_effect = Exception('Some exceptions')
+        worker.bulk = {
+            doc_id_1: {'id': doc_id_1, 'dateModified': date_modified},
+            doc_id_2: {'id': doc_id_2, 'dateModified': date_modified},
+            doc_id_3: {'id': doc_id_3, 'dateModified': date_modified},
+            doc_id_4: {'id': doc_id_4, 'dateModified': date_modified}
+        }
+        worker._save_bulk_docs()
+        self.assertEqual(worker.log_dict['update_documents'], 1)
+        self.assertEqual(worker.log_dict['save_documents'], 1)
+        self.assertEqual(worker.log_dict['skiped'], 1)
+        self.assertEqual(worker.log_dict['add_to_retry'], 5)
+
 
     def test_shutdown(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
