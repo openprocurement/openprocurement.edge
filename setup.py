@@ -18,9 +18,10 @@ requires = [
     'setuptools',
     'couchdb',
     'python-dateutil',
+    'pycrypto',
     'openprocurement_client',
-    'openprocurement.api',
     'munch',
+    'tzlocal',
     'pyyaml'
 ]
 test_requires = requires + [
@@ -40,7 +41,7 @@ entry_points = {
 }
 
 setup(name='openprocurement.edge',
-      version='1.0.0.a1',
+      version='1.0.0.a2',
       description='openprocurement.edge',
       long_description=README,
       classifiers=[
