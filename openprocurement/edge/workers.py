@@ -127,10 +127,6 @@ class ResourceItemWorker(Greenlet):
             if e.status_code == 429:
                 if api_client_dict['request_interval'] > self.config['drop_threshold_client_cookies']:
                     api_client_dict['client'].session.cookies.clear()
-                    try:
-                        del api_client_dict['client'].params['offset']
-                    except Exception:
-                        pass
                     api_client_dict['request_interval'] = 0
                 else:
                     api_client_dict['request_interval'] += self.config['client_inc_step_timeout']
@@ -152,21 +148,14 @@ class ResourceItemWorker(Greenlet):
             logger.error('Resource not found {} at public: {} {}. {}'.format(
                 self.config['resource'][:-1], queue_resource_item['id'],
                 queue_resource_item['dateModified'], e.message))
-            error_messages = json.loads(e.message)
-            for error in error_messages['errors']:
-                if error['description'] == 'Offset expired/invalid':
-                    api_client_dict['client'].session.cookies.clear()
-                    try:
-                        del api_client_dict['client'].params['offset']
-                    except Exception:
-                        pass
-                    logger.info('Clear client cookies')
-                    self.add_to_retry_queue({
-                        'id': queue_resource_item['id'],
-                        'dateModified': queue_resource_item['dateModified']
-                    })
-                    self.log_dict['not_found_count'] += 1
-                    break
+            api_client_dict['client'].session.cookies.clear()
+            logger.info('Clear client cookies')
+            self.add_to_retry_queue({
+                'id': queue_resource_item['id'],
+                'dateModified': queue_resource_item['dateModified']
+            })
+            self.log_dict['not_found_count'] += 1
+            self.log_dict['exceptions_count'] += 1
             self.api_clients_queue.put(api_client_dict)
             return None  # not found
         except Exception as e:
@@ -215,6 +204,7 @@ class ResourceItemWorker(Greenlet):
                     > self.bulk_save_interval or self.exit):
             try:
                 res = self.db.update(self.bulk.values())
+                logger.info('Save bulk docs to db.')
             except Exception as e:
                 logger.error('Error while saving bulk_docs in db: {}'.format(
                     e.message
@@ -222,7 +212,9 @@ class ResourceItemWorker(Greenlet):
                 for doc in self.bulk.values():
                     self.add_to_retry_queue({'id': doc['id'],
                                              'dateModified': doc['dateModified']})
-            logger.info('Save bulk docs to db.')
+                self.bulk = {}
+                self.start_time = datetime.now()
+                return
             self.bulk = {}
             for success, doc_id, rev_or_exc in res:
                 if success:
