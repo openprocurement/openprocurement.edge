@@ -269,7 +269,7 @@ class ResourceItemWorker(Greenlet):
             # Try get resource item from local storage
             try:
                 resource_item_doc = self.db.get(queue_resource_item['id'])  # Resource object from local db server
-                if not queue_resource_item['dateModified']:
+                if queue_resource_item['dateModified'] is None:
                     public_doc = self._get_resource_item_from_public(
                         api_client_dict, queue_resource_item)
                     if public_doc:
@@ -277,8 +277,10 @@ class ResourceItemWorker(Greenlet):
                             = public_doc['dateModified']
                     else:
                         continue
-                else:
-                    self.api_clients_queue.put(api_client_dict)
+                    api_client_dict = self._get_api_client_dict()
+                    if api_client_dict is None:
+                        self.add_to_retry_queue(queue_resource_item)
+                        continue
                 if resource_item_doc and resource_item_doc['dateModified'] >= queue_resource_item['dateModified']:
                     self.log_dict['skiped'] += 1
                     logger.debug('Ignored {} {} QUEUE - {}, EDGE - {}'.format(

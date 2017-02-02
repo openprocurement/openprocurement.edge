@@ -70,6 +70,7 @@ DEFAULTS = {
     'db_name': 'edge_db'
 }
 
+
 class DataBridgeConfigError(Exception):
     pass
 
@@ -83,13 +84,22 @@ class EdgeDataBridge(object):
         self.config = config
         self.workers_config = {}
         self.log_dict = {}
+        self.bridge_id = uuid.uuid4().hex
         self.api_host = self.config_get('resources_api_server')
         self.api_version = self.config_get('resources_api_version')
         self.retrievers_params = self.config_get('retrievers_params')
 
+        # Check up_wait_sleep
+        up_wait_sleep = self.retrievers_params.get('up_wait_sleep')
+        if up_wait_sleep is not None and up_wait_sleep < 30:
+            raise DataBridgeConfigError('Invalid \'up_wait_sleep\' in '
+                                        '\'retrievers_params\'. Value must be '
+                                        'grater than 30.')
+
         # Workers settings
         for key in WORKER_CONFIG:
-            self.workers_config[key] = self.config_get(key) or WORKER_CONFIG[key]
+            self.workers_config[key] = (self.config_get(key) or
+                                        WORKER_CONFIG[key])
 
         # Init config
         for key in DEFAULTS:
@@ -109,7 +119,8 @@ class EdgeDataBridge(object):
         if self.retry_resource_items_queue_size == -1:
             self.retry_resource_items_queue = Queue()
         else:
-            self.retry_resource_items_queue = Queue(self.retry_resource_items_queue_size)
+            self.retry_resource_items_queue = Queue(
+                self.retry_resource_items_queue_size)
 
         self.process = psutil.Process(os.getpid())
 
@@ -147,7 +158,7 @@ class EdgeDataBridge(object):
             }
         }
         self.logger = LogsCollector(collector_config)
-        self.view_path ='_design/{}/_view/by_dateModified'.format(
+        self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.workers_config['resource'])
 
     def config_get(self, name):
@@ -158,7 +169,7 @@ class EdgeDataBridge(object):
                                         ' \'main\'')
 
     def create_api_client(self):
-        client_user_agent = self.user_agent + '/' + uuid.uuid4().hex
+        client_user_agent = self.user_agent + '/' + self.bridge_id
         timeout = 0.1
         while 1:
             try:
@@ -192,7 +203,8 @@ class EdgeDataBridge(object):
         for resource_item in get_resource_items(
             host=self.api_host, version=self.api_version, key='',
             extra_params={'mode': '_all_', 'limit': self.resource_items_limit},
-            resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
+            resource=self.workers_config['resource'],
+            retrievers_params=self.retrievers_params):
 
             input_dict[resource_item['id']] = resource_item['dateModified']
 
@@ -222,7 +234,6 @@ class EdgeDataBridge(object):
                         self.log_dict['add_to_resource_items_queue'] += 1
                 input_dict = {}
                 start_time = datetime.now()
-
 
     def resource_items_filter(self, r_id, r_date_modified):
         try:
