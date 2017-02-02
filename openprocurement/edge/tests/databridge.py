@@ -143,6 +143,12 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'public_resources_api_server': 'https://lb.api-sandbox.openprocurement.org',
                 'couch_url': 'http://localhost:5984',
                 'db_name': 'test_db',
+                'retrievers_params': {
+                    'down_requests_sleep': 5,
+                    'up_requests_sleep': 1,
+                    'up_wait_sleep': 30,
+                    'queue_size': 101
+                }
             },
             'version': 1
         }
@@ -151,7 +157,14 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
         # Create EdgeDataBridge object without variable 'resources_api_server' in config
         del test_config['mani']
-        test_config['main'] = {}
+        test_config['main'] = {
+            'retrievers_params': {
+                'down_requests_sleep': 5,
+                'up_requests_sleep': 1,
+                'up_wait_sleep': 30,
+                'queue_size': 101
+            }
+        }
         with self.assertRaises(DataBridgeConfigError):
             EdgeDataBridge(test_config)
         with self.assertRaises(KeyError):
@@ -210,6 +223,12 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         del bridge
         server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
         del server[test_config['main']['db_name']]
+
+        test_config['main']['retrievers_params']['up_wait_sleep'] = 0
+        with self.assertRaises(DataBridgeConfigError) as e:
+            bridge = EdgeDataBridge(test_config)
+        self.assertEqual(e.exception.message, 'Invalid \'up_wait_sleep\' in '
+                         '\'retrievers_params\'. Value must be grater than 30.')
 
     @patch('openprocurement.edge.databridge.APIClient')
     def test_fill_api_clients_queue(self, mock_APIClient):
@@ -308,7 +327,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'resources_api_version': "0",
                 'public_resources_api_server': 'https://lb.api-sandbox.openprocurement.org',
                 'couch_url': 'http://localhost:5984',
-                'db_name': 'test_db'
+                'db_name': 'test_db',
+                'retrievers_params': {
+                    'down_requests_sleep': 5,
+                    'up_requests_sleep': 1,
+                    'up_wait_sleep': 30,
+                    'queue_size': 101
+                }
             },
             'version': 1
         }
