@@ -281,6 +281,7 @@ class ResourceItemWorker(Greenlet):
                         queue_resource_item['dateModified'],
                         resource_item_doc['dateModified'],
                     ))
+                    self.api_clients_queue.put(api_client_dict)
                     continue
             except Exception as e:
                 self.api_clients_queue.put(api_client_dict)
@@ -288,9 +289,8 @@ class ResourceItemWorker(Greenlet):
                     'id': queue_resource_item['id'],
                     'dateModified': queue_resource_item['dateModified']
                 })
-                logger.error('Error while getting resource item from couchdb: {}'.format(
-                    e.message
-                ))
+                logger.error('Error while getting resource item from couchdb: '
+                             '{}'.format(e.message))
                 self.log_dict['exceptions_count'] += 1
                 continue
 
