@@ -26,6 +26,13 @@ ROUTE_PREFIX = '/api/{}'.format(VERSION)
 SERVICE_FIELDS = ('__parent__', '_rev', '_id', 'doc_type')
 json_view = partial(view, renderer='json')
 
+VALIDATE_BULK_DOCS_ID = '_design/validate_date_modified'
+VALIDATE_BULK_DOCS_UPDATE = """function(newDoc, oldDoc, userCtx) {
+    if (oldDoc && (newDoc.dateModified <= oldDoc.dateModified)) {
+        throw({forbidden: 'New doc with oldest dateModified.' });
+    };
+}"""
+
 
 class APIResource(object):
 
