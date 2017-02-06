@@ -4,7 +4,9 @@ from binascii import hexlify, unhexlify
 from cornice.resource import resource, view
 from cornice.util import json_error
 from couchapp.dispatch import dispatch
+from couchdb import Server, Session
 from datetime import datetime
+from socket import error
 from Crypto.Cipher import AES
 from functools import partial
 from json import dumps
@@ -13,9 +15,12 @@ from munch import munchify
 from pkg_resources import get_distribution
 from pytz import timezone
 from webob.multidict import NestedMultiDict
-
-from openprocurement.edge.traversal import auction_factory, contract_factory
-from openprocurement.edge.traversal import plan_factory, tender_factory
+from openprocurement.edge.traversal import (
+    auction_factory,
+    contract_factory,
+    plan_factory,
+    tender_factory
+)
 
 PKG = get_distribution(__package__)
 LOGGER = getLogger(PKG.project_name)
@@ -34,6 +39,10 @@ VALIDATE_BULK_DOCS_UPDATE = """function(newDoc, oldDoc, userCtx) {
 }"""
 
 
+class DataBridgeConfigError(Exception):
+    pass
+
+
 class APIResource(object):
 
     def __init__(self, request, context):
@@ -42,6 +51,35 @@ class APIResource(object):
         self.db = request.registry.db
         self.server_id = request.registry.server_id
         self.LOGGER = getLogger(type(self).__module__)
+
+
+def prepare_couchdb(couch_url, db_name, logger):
+    server = Server(couch_url, session=Session(retry_delays=range(10)))
+    try:
+        if db_name not in server:
+            db = server.create(db_name)
+        else:
+            db = server[db_name]
+    except error as e:
+        logger.error('Database error: {}'.format(e.message))
+        raise DataBridgeConfigError(e.strerror)
+
+    validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
+    if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
+        validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
+        db.save(validate_doc)
+        logger.info('Validate document update view saved.')
+    else:
+        logger.info('Validate document update view already exist.')
+    return db
+
+
+def prepare_couchdb_views(db_url, resource, logger):
+    doc_id = '_design/' + resource
+    couchapp_path = os.path.dirname(os.path.abspath(__file__)) \
+        + '/couch_views' + '/' + resource
+    push_views(couchapp_path=couchapp_path, couch_url=db_url)
+    logger.info('Show views for {} installed.'.format(resource))
 
 
 def get_now():
@@ -73,17 +111,9 @@ def add_logging_context(event):
 
 def set_logging_context(event):
     request = event.request
-
     params = {}
     if request.params:
         params['PARAMS'] = str(dict(request.params))
-    if request.matchdict:
-        for x, j in request.matchdict.items():
-            params[x.upper()] = j
-    if 'tender' in request.validated:
-        params['TENDER_REV'] = request.validated['tender']._rev
-        params['TENDERID'] = request.validated['tender'].tenderID
-        params['TENDER_STATUS'] = request.validated['tender'].status
     update_logging_context(request, params)
 
 
@@ -124,6 +154,7 @@ def error_handler(errors, request_params=True):
                                      {'MESSAGE_ID': 'error_handler'}, params))
     return json_error(errors)
 
+
 opresource = partial(resource, error_handler=error_handler,
                      factory=tender_factory)
 eaopresource = partial(resource, error_handler=error_handler,
@@ -134,23 +165,6 @@ planningresource = partial(resource, error_handler=error_handler,
                            factory=plan_factory)
 
 
-def extract_doc_adapter(request, doc_id, doc_type):
-    db = request.registry.db
-    doc = db.get(doc_id)
-    if doc is None or doc.get('doc_type') != doc_type:
-        request.errors.add('url', '{}_id'.format(doc_type.lower()), 'Not Found')
-        request.errors.status = 404
-        raise error_handler(request.errors)
-    return munchify(doc)
-
-
-def clean_up_doc(doc, service_fields=SERVICE_FIELDS):
-    for field in service_fields:
-        if field in doc:
-            del doc[field]
-    return doc
-
-
 def push_views(couchapp_path=None, couch_url=None):
     if couchapp_path is None or couch_url is None:
         raise Exception('Can\'t push couchapp. Please check \'couchapp_path\''
@@ -159,7 +173,7 @@ def push_views(couchapp_path=None, couch_url=None):
         if os.path.exists(couchapp_path):
             dispatch(['push', couchapp_path, couch_url])
         else:
-            LOGGER.info('Directory {} not exist.'.format(couchapp_path))
+            raise DataBridgeConfigError('Invalid path to couchapp.')
 
 
 def request_params(request):

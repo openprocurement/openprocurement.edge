@@ -21,7 +21,14 @@ from openprocurement_client.sync import get_resource_items
 from openprocurement_client.exceptions import InvalidResponse, RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
 from openprocurement.edge.collector import LogsCollector
-from openprocurement.edge.utils import VALIDATE_BULK_DOCS_ID, VALIDATE_BULK_DOCS_UPDATE, push_views
+from openprocurement.edge.utils import (
+    VALIDATE_BULK_DOCS_ID,
+    VALIDATE_BULK_DOCS_UPDATE,
+    push_views,
+    prepare_couchdb,
+    prepare_couchdb_views,
+    DataBridgeConfigError
+)
 
 import errno
 from socket import error
@@ -49,6 +56,7 @@ WORKER_CONFIG = {
 }
 
 DEFAULTS = {
+    'retrieve_mode': '_all_',
     'workers_inc_threshold': 75,
     'workers_dec_threshold': 35,
     'workers_min': 1,
@@ -71,10 +79,6 @@ DEFAULTS = {
     'couch_url': 'http://127.0.0.1:5984',
     'db_name': 'edge_db'
 }
-
-
-class DataBridgeConfigError(Exception):
-    pass
 
 
 class EdgeDataBridge(object):
@@ -140,18 +144,9 @@ class EdgeDataBridge(object):
         else:
             raise DataBridgeConfigError('In config dictionary empty or missing'
                                         ' \'tenders_api_server\'')
-
-        server = Server(self.couch_url, session=Session(retry_delays=range(10)))
-
-        try:
-            if self.db_name not in server:
-                self.db = server.create(self.db_name)
-            else:
-                self.db = server[self.db_name]
-        except error as e:
-            logger.error('Database error: {}'.format(e.message))
-            raise DataBridgeConfigError(e.strerror)
-
+        self.db = prepare_couchdb(self.couch_url, self.db_name, logger)
+        db_url = self.couch_url + '/' + self.db_name
+        prepare_couchdb_views(db_url, self.workers_config['resource'], logger)
         collector_config = {
             'main': {
                 'storage': 'couchdb',
@@ -162,7 +157,6 @@ class EdgeDataBridge(object):
         self.logger = LogsCollector(collector_config)
         self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.workers_config['resource'])
-        self.prepare_couchdb()
 
     def config_get(self, name):
         try:
@@ -170,21 +164,6 @@ class EdgeDataBridge(object):
         except AttributeError:
             raise DataBridgeConfigError('In config dictionary missed section'
                                         ' \'main\'')
-
-    def prepare_couchdb(self):
-        doc_id = '_design/' + self.workers_config['resource']
-        couchapp_path = os.path.dirname(os.path.abspath(__file__)) \
-            + '/couch_views' + '/' + self.workers_config['resource']
-        couch_url = self.couch_url + '/' + self.db_name
-        push_views(couchapp_path=couchapp_path, couch_url=couch_url)
-        logger.info('Show views for {} installed.'.format(self.workers_config['resource']))
-        validate_doc = self.db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
-        if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
-            validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
-            self.db.save(validate_doc)
-            logger.info('Validate document update view saved.')
-        else:
-            logger.info('Validate document update view already exist.')
 
     def create_api_client(self):
         client_user_agent = self.user_agent + '/' + self.bridge_id
@@ -206,8 +185,7 @@ class EdgeDataBridge(object):
                 self.log_dict['exceptions_count'] += 1
                 logger.error(
                     'Failed start api_client with status code {}'.format(
-                        e.status_code
-                ))
+                        e.status_code))
                 timeout = timeout * 2
                 sleep(timeout)
 
@@ -219,10 +197,9 @@ class EdgeDataBridge(object):
         start_time = datetime.now()
         input_dict = {}
         for resource_item in get_resource_items(
-            host=self.api_host, version=self.api_version, key='',
-            extra_params={'mode': '_all_', 'limit': self.resource_items_limit},
-            resource=self.workers_config['resource'],
-            retrievers_params=self.retrievers_params):
+                host=self.api_host, version=self.api_version, key='',
+                extra_params={'mode': self.retrieve_mode, 'limit': self.resource_items_limit},
+                resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
 
             input_dict[resource_item['id']] = resource_item['dateModified']
 
@@ -313,10 +290,12 @@ class EdgeDataBridge(object):
                                              self.retry_resource_items_queue,
                                              self.log_dict)
                 self.workers_pool.add(w)
+                logger.info('Queue controller: Create main queue worker.')
             elif self.resource_items_queue.qsize() < int((self.resource_items_queue_size / 100) * self.workers_dec_threshold):
                 if len(self.workers_pool) > self.workers_min:
                     wi = self.workers_pool.greenlets.pop()
                     wi.shutdown()
+                    logger.info('Queue controller: Kill main queue worker.')
             filled_resource_items_queue = int(
                 self.resource_items_queue.qsize()/(self.resource_items_queue_size / 100))
             logger.info('Resource items queue filled on {} %'.format(filled_resource_items_queue))
@@ -324,12 +303,12 @@ class EdgeDataBridge(object):
             logger.info('Retry resource items queue filled on {} %'.format(filled_retry_resource_items_queue))
             sleep(self.queues_controller_timeout)
 
-
     def gevent_watcher(self):
         spawn(self.logger.save, self.bridge_stats())
         self.reset_log_counters()
         for i in xrange(0, self.filter_workers_pool.free_count()):
             self.filter_workers_pool.spawn(self.fill_resource_items_queue)
+            logger.info('Watcher: Create fill queue worker.')
         if len(self.workers_pool) < self.workers_min:
             for i in xrange(0, (self.workers_min - len(self.workers_pool))):
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
@@ -338,6 +317,7 @@ class EdgeDataBridge(object):
                                              self.retry_resource_items_queue,
                                              self.log_dict)
                 self.workers_pool.add(w)
+                logger.info('Watcher: Create main queue worker.')
                 self.create_api_client()
         if len(self.retry_workers_pool) < self.retry_workers_min:
             for i in xrange(0, self.retry_workers_min - len(self.retry_workers_pool)):
@@ -348,6 +328,7 @@ class EdgeDataBridge(object):
                                              self.retry_resource_items_queue,
                                              self.log_dict)
                 self.retry_workers_pool.add(w)
+                logger.info('Watcher: Create retry queue worker.')
                 self.create_api_client()
 
     def run(self):
@@ -358,7 +339,7 @@ class EdgeDataBridge(object):
         self.fill_api_clients_queue()
         self.filter_workers_pool.spawn(self.fill_resource_items_queue)
         spawn(self.queues_controller)
-        while 1:
+        while True:
             self.gevent_watcher()
             sleep(self.watch_interval)
 

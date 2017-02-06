@@ -9,7 +9,8 @@ from logging import getLogger
 from openprocurement.edge.utils import (
     add_logging_context,
     set_logging_context,
-    push_views,
+    prepare_couchdb,
+    prepare_couchdb_views,
     beforerender,
     request_params,
     set_renderer,
@@ -80,49 +81,19 @@ def main(global_config, **settings):
     resources = settings.get('resources') and settings['resources'].split(',')
     couchapp_path = os.path.dirname(os.path.abspath(__file__)) + '/couch_views'
     couch_url = settings.get('couchdb.url') + settings.get('couchdb.db_name')
-    if 'tenders' in resources:
-        config.scan("openprocurement.edge.views.tenders")
-        push_views(couchapp_path=couchapp_path+'/tenders', couch_url=couch_url)
-        LOGGER.info('Push couch tenders views successful.')
-        LOGGER.info('Tender resource initialized successful.')
+    for resource in resources:
+        config.scan("openprocurement.edge.views." + resource)
+        prepare_couchdb_views(couch_url, resource, LOGGER)
+        LOGGER.info('Push couch {} views successful.'.format(resource))
+        LOGGER.info('{} resource initialized successful.'.format(resource.title()))
 
-    if 'auctions' in resources:
-        config.scan("openprocurement.edge.views.auctions")
-        push_views(couchapp_path=couchapp_path+'/auctions', couch_url=couch_url)
-        LOGGER.info('Push couch auctions views successful.')
-        LOGGER.info('Auction resource initialized successful.')
-
-    if 'contracts' in resources:
-        config.scan("openprocurement.edge.views.contracts")
-        push_views(couchapp_path=couchapp_path+'/contracts',
-                   couch_url=couch_url)
-        LOGGER.info('Push couch contracts views successful.')
-        LOGGER.info('Contract resource initialized successful.')
-
-    if 'plans' in resources:
-        config.scan("openprocurement.edge.views.plans")
-        push_views(couchapp_path=couchapp_path+'/plans', couch_url=couch_url)
-        LOGGER.info('Push couch plans views successful.')
-        LOGGER.info('Plan resource initialized successful.')
     # CouchDB connection
-    db_name = os.environ.get('DB_NAME', settings['couchdb.db_name'])
     server = Server(settings.get('couchdb.url'),
                     session=Session(retry_delays=range(10)))
     config.registry.couchdb_server = server
-    if db_name not in server:
-        try:
-            server.create(db_name)
-        except PreconditionFailed as e:
-            if e.message == u'The database could not be created, the file already exists.':
-                pass
-    db = server[db_name]
-    validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
-    if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
-        validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
-        db.save(validate_doc)
-    # sync couchdb views
-    # sync_design(db)
-    config.registry.db = db
+    config.registry.db = prepare_couchdb(settings.get('couchdb.url'),
+                                         settings.get('couchdb.db_name'),
+                                         LOGGER)
     config.registry.server_id = settings.get('id', '')
     config.registry.health_threshold = float(settings.get('health_threshold', 99))
     config.registry.api_version = version

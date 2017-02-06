@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
+from mock import patch
 from openprocurement.edge.utils import get_now
 from openprocurement.edge.tests.base import (
     AuctionBaseWebTest,
@@ -12,6 +13,25 @@ from openprocurement.edge.tests.base import (
 class AuctionResourceTest(AuctionBaseWebTest):
 
     def test_empty_listing(self):
+        with patch('openprocurement.edge.utils.NestedMultiDict') as mock_dict:
+            mock_dict.side_effect = UnicodeDecodeError('hitchhiker', "", 42, 43,
+                                                       'the universe and everything else')
+            response = self.app.get('/auctions', status=422)
+        self.assertEqual(response.status, '422 Unprocessable Entity')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'], [{u'description': u'could not decode params',
+                                                    u'location': u'body', u'name': u'data'}])
+        self.assertEqual(response.content_type, 'application/json')
+
+        with patch('openprocurement.edge.utils.NestedMultiDict') as mock_dict:
+            mock_dict.side_effect = Exception('Very good exception')
+            response = self.app.get('/auctions', status=422)
+        self.assertEqual(response.status, '422 Unprocessable Entity')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'], [{u'description': u'Very good exception',
+                                                    u'location': u'body', u'name': u'Exception'}])
+        self.assertEqual(response.content_type, 'application/json')
+
         response = self.app.get('/auctions')
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
