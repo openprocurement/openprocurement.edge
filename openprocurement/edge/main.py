@@ -4,11 +4,18 @@ if 'test' not in __import__('sys').argv[0]:
     gevent.monkey.patch_all()
 import os
 from couchdb import Server as CouchdbServer, Session
-from couchdb.http import Unauthorized, extract_credentials
+from couchdb.http import Unauthorized, extract_credentials, PreconditionFailed
 from logging import getLogger
-from openprocurement.edge.utils import add_logging_context, set_logging_context
-from openprocurement.edge.utils import push_views, beforerender
-from openprocurement.edge.utils import request_params, set_renderer
+from openprocurement.edge.utils import (
+    add_logging_context,
+    set_logging_context,
+    push_views,
+    beforerender,
+    request_params,
+    set_renderer,
+    VALIDATE_BULK_DOCS_ID,
+    VALIDATE_BULK_DOCS_UPDATE
+)
 
 LOGGER = getLogger("{}.init".format(__name__))
 
@@ -31,14 +38,6 @@ VALIDATE_DOC_UPDATE = """function(newDoc, oldDoc, userCtx){
     } else {
         throw({forbidden: 'Only authorized user may edit the database'});
     }
-}"""
-
-
-VALIDATE_BULK_DOCS_ID = '_design/validate_date_modified'
-VALIDATE_BULK_DOCS_UPDATE = """function(newDoc, oldDoc, userCtx) {
-    if (oldDoc && (newDoc.dateModified <= oldDoc.dateModified)) {
-        throw({forbidden: 'New doc with oldest dateModified.' });
-    };
 }"""
 
 
@@ -111,7 +110,11 @@ def main(global_config, **settings):
                     session=Session(retry_delays=range(10)))
     config.registry.couchdb_server = server
     if db_name not in server:
-        server.create(db_name)
+        try:
+            server.create(db_name)
+        except PreconditionFailed as e:
+            if e.message == u'The database could not be created, the file already exists.':
+                pass
     db = server[db_name]
     validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
     if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:

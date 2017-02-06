@@ -251,6 +251,33 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.api_clients_queue.qsize(),
                          bridge.workers_min)
 
+    def test_prepare_couchdb(self):
+        bridge = EdgeDataBridge(self.config)
+
+        # Exist db and all need views.
+        bridge.prepare_couchdb()
+        self.assertNotEqual(bridge.db.get('_design/tenders'), None)
+        self.assertNotEqual(bridge.db.get('_design/plans'), None)
+        self.assertNotEqual(bridge.db.get('_design/contracts'), None)
+        self.assertNotEqual(bridge.db.get('_design/auctions'), None)
+        validate_func = bridge.db.get(VALIDATE_BULK_DOCS_ID).get('validate_doc_update')
+        self.assertEqual(validate_func, VALIDATE_BULK_DOCS_UPDATE)
+
+        # Missed tenders views.
+        design_doc = bridge.db.get('_design/tenders')
+        bridge.db.delete(design_doc)
+        self.assertEqual(bridge.db.get('_design/tenders'), None)
+        bridge.prepare_couchdb()
+        self.assertNotEqual(bridge.db.get('_design/tenders'), None)
+
+        # Missed VALIDATE_BULK_DOCS_UPDATE
+        validate_doc = bridge.db.get(VALIDATE_BULK_DOCS_ID)
+        bridge.db.delete(validate_doc)
+        self.assertEqual(bridge.db.get(VALIDATE_BULK_DOCS_ID), None)
+        bridge.prepare_couchdb()
+        validate_func = bridge.db.get(VALIDATE_BULK_DOCS_ID).get('validate_doc_update')
+        self.assertEqual(validate_func, VALIDATE_BULK_DOCS_UPDATE)
+
     @patch('openprocurement.edge.databridge.get_resource_items')
     def test_fill_resource_items_queue(self, mock_get_resource_items):
         bridge = EdgeDataBridge(self.config)

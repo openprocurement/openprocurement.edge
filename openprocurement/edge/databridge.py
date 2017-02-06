@@ -21,6 +21,8 @@ from openprocurement_client.sync import get_resource_items
 from openprocurement_client.exceptions import InvalidResponse, RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
 from openprocurement.edge.collector import LogsCollector
+from openprocurement.edge.utils import VALIDATE_BULK_DOCS_ID, VALIDATE_BULK_DOCS_UPDATE, push_views
+
 import errno
 from socket import error
 from requests.exceptions import ConnectionError, MissingSchema
@@ -160,6 +162,7 @@ class EdgeDataBridge(object):
         self.logger = LogsCollector(collector_config)
         self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.workers_config['resource'])
+        self.prepare_couchdb()
 
     def config_get(self, name):
         try:
@@ -167,6 +170,21 @@ class EdgeDataBridge(object):
         except AttributeError:
             raise DataBridgeConfigError('In config dictionary missed section'
                                         ' \'main\'')
+
+    def prepare_couchdb(self):
+        doc_id = '_design/' + self.workers_config['resource']
+        couchapp_path = os.path.dirname(os.path.abspath(__file__)) \
+            + '/couch_views' + '/' + self.workers_config['resource']
+        couch_url = self.couch_url + '/' + self.db_name
+        push_views(couchapp_path=couchapp_path, couch_url=couch_url)
+        logger.info('Show views for {} installed.'.format(self.workers_config['resource']))
+        validate_doc = self.db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
+        if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
+            validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
+            self.db.save(validate_doc)
+            logger.info('Validate document update view saved.')
+        else:
+            logger.info('Validate document update view already exist.')
 
     def create_api_client(self):
         client_user_agent = self.user_agent + '/' + self.bridge_id
