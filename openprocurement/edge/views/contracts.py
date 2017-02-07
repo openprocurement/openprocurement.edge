@@ -5,9 +5,9 @@ from openprocurement.edge.utils import (
     decrypt,
     encrypt,
     APIResource,
-    json_view
+    json_view,
+    contractingresource
 )
-from openprocurement.edge.utils import contractingresource, clean_up_doc
 
 from openprocurement.edge.design import (
     by_dateModified_view_ViewDefinition,

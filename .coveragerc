@@ -1,5 +1,13 @@
+[run]
+omit =
+    *tests*
 [report]
+omit =
+    *tests*
 exclude_lines =
     def main()
     if __name__ == "__main__":
+    if 'test' not in __import__('sys').argv[0]:
+        import gevent.monkey
+        gevent.monkey.patch_all()
 show_missing = True

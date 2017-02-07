@@ -12,13 +12,9 @@ from mock import MagicMock, patch
 from munch import munchify
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement.edge.tests.base import test_tender_data, TenderBaseWebTest
-from openprocurement.edge.databridge import EdgeDataBridge, DataBridgeConfigError
-from openprocurement.edge.main import (
-    VALIDATE_BULK_DOCS_ID, VALIDATE_BULK_DOCS_UPDATE
-)
-from openprocurement.edge.utils import push_views
+from openprocurement.edge.databridge import EdgeDataBridge
+from openprocurement.edge.utils import DataBridgeConfigError, push_views, VALIDATE_BULK_DOCS_ID, VALIDATE_BULK_DOCS_UPDATE
 from requests.exceptions import ConnectionError
-from socket import error
 
 
 logger = logging.getLogger()
@@ -46,6 +42,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'resource_items_queue_size': -1,
             'retry_resource_items_queue_size': -1,
             'bulk_query_limit': 1,
+            'retrieve_mode': '_all_',
             'retrievers_params': {
                 'down_requests_sleep': 5,
                 'up_requests_sleep': 1,
@@ -195,21 +192,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         test_config['main']['resources_api_version'] = "0"
         test_config['main']['public_resources_api_server'] = 'https://lb.api-sandbox.openprocurement.org'
 
-        # Create EdgeDataBridge object with non exist database
-        bridge = EdgeDataBridge(test_config)
-        self.assertEqual(bridge.db.name, test_config['main']['db_name'])
-
-        try:
-            server = Server(test_config['main'].get('couch_url') or 'http://127.0.0.1:5984')
-            del server[test_config['main']['db_name']]
-        except:
-            pass
-
-        with patch('openprocurement.edge.databridge.Server.create') as mock_create:
-            mock_create.side_effect = DataBridgeConfigError('test error')
-            with self.assertRaises(DataBridgeConfigError) as e:
-                bridge = EdgeDataBridge(test_config)
-            self.assertEqual(e.exception.message, 'test error')
 
         # Create EdgeDataBridge object with deleting config variables step by step
         bridge = EdgeDataBridge(test_config)

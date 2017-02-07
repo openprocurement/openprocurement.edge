@@ -4,7 +4,7 @@ import unittest
 import uuid
 from couchdb import Server, ResourceNotFound
 from copy import deepcopy
-from gevent import sleep
+from gevent import sleep, spawn
 from gevent.queue import Queue
 from mock import MagicMock, patch
 from munch import munchify
@@ -64,7 +64,6 @@ class TestResourceItemWorker(unittest.TestCase):
         self.log_dict['add_to_resource_items_queue'] = 0
         self.log_dict['exceptions_count'] = 0
         self.log_dict['not_found_count'] = 0
-
 
     def test_init(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
@@ -144,8 +143,7 @@ class TestResourceItemWorker(unittest.TestCase):
 
     def test__get_resource_item_from_queue(self):
         items_queue = Queue()
-        item = {'id': uuid.uuid4().hex,
-         'dateModified': datetime.datetime.utcnow().isoformat()}
+        item = {'id': uuid.uuid4().hex, 'dateModified': datetime.datetime.utcnow().isoformat()}
         items_queue.put(item)
 
         # Success test
@@ -347,8 +345,8 @@ class TestResourceItemWorker(unittest.TestCase):
             doc_id_4: {'id': doc_id_4, 'dateModified': date_modified}
         }
         update_return_value = [
-            (True, doc_id_1, '1-'+uuid.uuid4().hex),
-            (True, doc_id_2, '2-'+uuid.uuid4().hex),
+            (True, doc_id_1, '1-' + uuid.uuid4().hex),
+            (True, doc_id_2, '2-' + uuid.uuid4().hex),
             (False, doc_id_3, Exception(u'New doc with oldest dateModified.')),
             (False, doc_id_4, Exception(u'Document update conflict.'))
         ]
@@ -380,7 +378,6 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(worker.log_dict['save_documents'], 1)
         self.assertEqual(worker.log_dict['skiped'], 1)
         self.assertEqual(worker.log_dict['add_to_retry'], 5)
-
 
     def test_shutdown(self):
         worker = ResourceItemWorker('api_clients_queue', 'resource_items_queue',
