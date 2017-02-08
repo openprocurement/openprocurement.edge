@@ -8,6 +8,7 @@ from openprocurement.edge.tests.base import (
     ROUTE_PREFIX
 )
 
+
 class PlanResourceTest(PlanBaseWebTest):
 
     def test_empty_listing(self):
@@ -92,10 +93,12 @@ class PlanResourceTest(PlanBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in plans]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in plans]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in plans]))
-
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in plans]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in plans]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in plans]))
 
         while True:
             response = self.app.get('/plans?offset={}'.format(offset))
@@ -128,7 +131,8 @@ class PlanResourceTest(PlanBaseWebTest):
         response = self.app.get('/plans', params=[('opt_fields', 'status,planID')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'planID']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'planID']))
         self.assertIn('opt_fields=status%2CplanID', response.json['next_page']['uri'])
 
         response = self.app.get('/plans?descending=1')
@@ -136,8 +140,10 @@ class PlanResourceTest(PlanBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in plans]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in plans], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in plans]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in plans], reverse=True))
 
         response = self.app.get('/plans?descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -191,9 +197,12 @@ class PlanResourceTest(PlanBaseWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in plans]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in plans]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in plans]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in plans]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in plans]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in plans]))
 
         response = self.app.get('/plans?feed=changes&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -219,7 +228,8 @@ class PlanResourceTest(PlanBaseWebTest):
         response = self.app.get('/plans?feed=changes', params=[('opt_fields', 'status,planID')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'planID']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'planID']))
         self.assertIn('opt_fields=status%2CplanID', response.json['next_page']['uri'])
 
         response = self.app.get('/plans?feed=changes&descending=1')
@@ -227,8 +237,10 @@ class PlanResourceTest(PlanBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in plans]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in plans], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in plans]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in plans], reverse=True))
 
         response = self.app.get('/plans?feed=changes&descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -282,9 +294,12 @@ class PlanResourceTest(PlanBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in plans]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in plans]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in plans]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in plans]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in plans]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in plans]))
 
 
 def suite():

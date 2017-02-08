@@ -6,8 +6,6 @@ from mock import MagicMock, patch
 from socket import error
 from couchdb import Server, ResourceNotFound
 
-import datetime
-
 
 class TestLogsCollector(unittest.TestCase):
     config = {
@@ -52,12 +50,12 @@ class TestLogsCollector(unittest.TestCase):
         with patch('openprocurement.edge.collector.Server.create') as mock_create:
             mock_create.side_effect = error('test error')
             with self.assertRaises(LogsCollectorConfigError):
-                log = LogsCollector(test_config)
+                LogsCollector(test_config)
 
     def test_save(self):
         log = LogsCollector(self.config)
         log.db.save = MagicMock()
-        log.save({'a':12, 'b':13})
+        log.save({'a': 12, 'b': 13})
 
     def test_run(self):
         log = LogsCollector(self.config)

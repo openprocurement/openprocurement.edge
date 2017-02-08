@@ -27,7 +27,7 @@ class TestCouchViews(unittest.TestCase):
         app_path += 'couch_views'
         couchdb_url = cls.couchdb_url + '/test_db'
         for resource in ('/tenders', '/plans', '/contracts', '/auctions'):
-            push_views(couchapp_path=app_path+resource,
+            push_views(couchapp_path=app_path + resource,
                        couch_url=couchdb_url)
         cls.app = Session()
         cls.tender_id = uuid.uuid4().hex
@@ -39,7 +39,8 @@ class TestCouchViews(unittest.TestCase):
                 'url': '/test_db/_design/tenders/_show/show/{}'.format(cls.tender_id),
                 'template': 'files/tid.json'
             },
-            {'url': '/test_db/_design/tenders/_show/show/{}?award_id=*'.format(cls.tender_id), 'template': 'files/awards.json'},
+            {'url': '/test_db/_design/tenders/_show/show/{}?award_id=*'.format(cls.tender_id),
+             'template': 'files/awards.json'},
             {'url': '/test_db/_design/tenders/_show/show/{}?award_id=f0d5fd00743b46668f6b589496ad73eb'.format(cls.tender_id), 'template': 'files/f0d5fd00743b46668f6b589496ad73eb.json'},
             {'url': '/test_db/_design/tenders/_show/show/{}?award_id=f0d5fd00743b46668f6b589496ad73eb&complaint_id=*'.format(cls.tender_id), 'template': 'files/awards_complaints.json'},
             {'url': '/test_db/_design/tenders/_show/show/{}?award_id=f0d5fd00743b46668f6b589496ad73eb&complaint_id=c2a9a67e05314669a3c578043cfa91ba'.format(cls.tender_id), 'template': 'files/c2a9a67e05314669a3c578043cfa91ba.json'},

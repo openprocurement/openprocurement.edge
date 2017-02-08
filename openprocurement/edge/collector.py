@@ -2,13 +2,14 @@
 from gevent import monkey
 monkey.patch_all()
 
+import argparse
+import os
 import logging
 import logging.config
 from couchdb import Server, Session
 from socket import error
 from urlparse import urlparse
-import gevent.pool
-from gevent import spawn, sleep, idle
+from yaml import load
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class LogsCollector(object):
     def config_get(self, name):
         try:
             return self.config.get('main').get(name)
-        except AttributeError as e:
+        except AttributeError:
             raise LogsCollectorConfigError('In config dictionary missed'
                                            ' section \'main\'')
 

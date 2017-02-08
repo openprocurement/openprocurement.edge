@@ -2,9 +2,7 @@
 if 'test' not in __import__('sys').argv[0]:
     import gevent.monkey
     gevent.monkey.patch_all()
-import os
 from couchdb import Server as CouchdbServer, Session
-from couchdb.http import Unauthorized, extract_credentials, PreconditionFailed
 from logging import getLogger
 from openprocurement.edge.utils import (
     add_logging_context,
@@ -13,14 +11,11 @@ from openprocurement.edge.utils import (
     prepare_couchdb_views,
     beforerender,
     request_params,
-    set_renderer,
-    VALIDATE_BULK_DOCS_ID,
-    VALIDATE_BULK_DOCS_UPDATE
+    set_renderer
 )
 
 LOGGER = getLogger("{}.init".format(__name__))
 
-from pbkdf2 import PBKDF2
 from pyramid.config import Configurator
 from pyramid.events import NewRequest, BeforeRender, ContextFound
 from pyramid.renderers import JSON, JSONP
@@ -79,7 +74,6 @@ def main(global_config, **settings):
     config.scan("openprocurement.edge.views.health")
 
     resources = settings.get('resources') and settings['resources'].split(',')
-    couchapp_path = os.path.dirname(os.path.abspath(__file__)) + '/couch_views'
     couch_url = settings.get('couchdb.url') + settings.get('couchdb.db_name')
     for resource in resources:
         config.scan("openprocurement.edge.views." + resource)

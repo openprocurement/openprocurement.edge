@@ -8,6 +8,7 @@ from openprocurement.edge.tests.base import (
     ROUTE_PREFIX
 )
 
+
 class ContractResourceTest(ContractBaseWebTest):
 
     def test_empty_listing(self):
@@ -92,10 +93,12 @@ class ContractResourceTest(ContractBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in contracts]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in contracts]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in contracts]))
-
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in contracts]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in contracts]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in contracts]))
 
         while True:
             response = self.app.get('/contracts?offset={}'.format(offset))
@@ -128,7 +131,8 @@ class ContractResourceTest(ContractBaseWebTest):
         response = self.app.get('/contracts', params=[('opt_fields', 'status,contractID')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'contractID']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'contractID']))
         self.assertIn('opt_fields=status%2CcontractID', response.json['next_page']['uri'])
 
         response = self.app.get('/contracts?descending=1')
@@ -136,8 +140,10 @@ class ContractResourceTest(ContractBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in contracts]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in contracts], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in contracts]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in contracts], reverse=True))
 
         response = self.app.get('/contracts?descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -191,9 +197,12 @@ class ContractResourceTest(ContractBaseWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in contracts]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in contracts]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in contracts]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in contracts]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in contracts]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in contracts]))
 
         response = self.app.get('/contracts?feed=changes&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -216,10 +225,12 @@ class ContractResourceTest(ContractBaseWebTest):
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status']))
         self.assertIn('opt_fields=status', response.json['next_page']['uri'])
 
-        response = self.app.get('/contracts?feed=changes', params=[('opt_fields', 'status,contractID')])
+        response = self.app.get('/contracts?feed=changes',
+                                params=[('opt_fields', 'status,contractID')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'contractID']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'contractID']))
         self.assertIn('opt_fields=status%2CcontractID', response.json['next_page']['uri'])
 
         response = self.app.get('/contracts?feed=changes&descending=1')
@@ -227,8 +238,10 @@ class ContractResourceTest(ContractBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in contracts]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in contracts], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in contracts]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in contracts], reverse=True))
 
         response = self.app.get('/contracts?feed=changes&descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -282,9 +295,12 @@ class ContractResourceTest(ContractBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in contracts]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in contracts]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in contracts]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in contracts]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in contracts]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in contracts]))
 
 
 def suite():

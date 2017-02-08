@@ -11,7 +11,6 @@ from Crypto.Cipher import AES
 from functools import partial
 from json import dumps
 from logging import getLogger
-from munch import munchify
 from pkg_resources import get_distribution
 from pytz import timezone
 from webob.multidict import NestedMultiDict
@@ -75,7 +74,6 @@ def prepare_couchdb(couch_url, db_name, logger):
 
 
 def prepare_couchdb_views(db_url, resource, logger):
-    doc_id = '_design/' + resource
     couchapp_path = os.path.dirname(os.path.abspath(__file__)) \
         + '/couch_views' + '/' + resource
     push_views(couchapp_path=couchapp_path, couch_url=db_url)

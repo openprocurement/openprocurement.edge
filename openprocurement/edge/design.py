@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import unittest
 from couchdb.design import ViewDefinition
 
 
@@ -108,6 +107,7 @@ def real_by_dateModified_view_ViewDefinition(resource):
 
     return ViewDefinition(resource, 'real_by_dateModified', func_source)
 
+
 def test_by_dateModified_view_ViewDefinition(resource='tenders'):
     fields = _get_fields(resource)
     return ViewDefinition(resource, 'test_by_dateModified', '''function(doc) {
@@ -166,6 +166,7 @@ def test_by_local_seq_view_ViewDefinition(resource='tenders'):
         emit(doc._local_seq, data);
     }
 }''' % dict(resource=resource[:-1].title(), fields=repr(changes_fields)))
+
 
 conflicts_view = ViewDefinition('conflicts', 'all', '''function(doc) {
     if (doc._conflicts) {

@@ -2,20 +2,17 @@
 import datetime
 import unittest
 import uuid
-from couchdb import Server, ResourceNotFound
 from copy import deepcopy
-from gevent import sleep, spawn
+from gevent import sleep
 from gevent.queue import Queue
 from mock import MagicMock, patch
 from munch import munchify
-from openprocurement_client.client import TendersClient as APIClient
 from openprocurement_client.exceptions import (
     InvalidResponse,
     RequestFailed,
     ResourceNotFound as RNF
 )
 from openprocurement.edge.workers import ResourceItemWorker
-from socket import error
 
 
 class TestResourceItemWorker(unittest.TestCase):
@@ -121,10 +118,9 @@ class TestResourceItemWorker(unittest.TestCase):
 
         del worker
 
-    @patch('openprocurement.edge.tests.workers.APIClient')
-    def test__get_api_client_dict(self, mock_api_client):
+    def test__get_api_client_dict(self):
         api_clients_queue = Queue()
-        client = mock_api_client()
+        client = MagicMock()
         client_dict = {'client': client, 'request_interval': 0}
         api_clients_queue.put(client_dict)
 
@@ -160,7 +156,7 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(resource_item, None)
         del worker
 
-    @patch('openprocurement.edge.tests.workers.APIClient')
+    @patch('openprocurement_client.client.TendersClient')
     def test__get_resource_item_from_public(self, mock_api_client):
         item = {
             'id': uuid.uuid4().hex,

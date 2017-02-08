@@ -7,24 +7,21 @@ with open(os.path.join(here, 'README.rst')) as f:
     README = f.read()
 
 requires = [
-    'chaussette',
     'cornice',
     'gevent',
-    'iso8601',
-    'jsonpatch',
-    'pbkdf2',
     'pyramid_exclog',
-    'requests',
     'setuptools',
     'couchdb',
-    'python-dateutil',
+    'couchapp',
     'pycrypto',
     'openprocurement_client',
     'munch',
     'tzlocal',
-    'pyyaml'
+    'pyyaml',
+    'psutil'
 ]
 test_requires = requires + [
+    'requests',
     'webtest',
     'python-coveralls',
     'nose',
@@ -41,7 +38,7 @@ entry_points = {
 }
 
 setup(name='openprocurement.edge',
-      version='1.0.0dev3',
+      version='1.0.0dev4',
       description='openprocurement.edge',
       long_description=README,
       classifiers=[
