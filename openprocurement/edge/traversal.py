@@ -29,7 +29,7 @@ def get_item(request, data):
                 items = [i for i in item if i['id'] == item_name]
                 if len(items) > 1 and request.matchdict['items'][index - 1] == 'documents':
                     document = items.pop()
-                    document['previousVersions'] = [{'url':i['url'], 'dateModified':i['dateModified']} for i in items if i.url != document.url]
+                    document['previousVersions'] = [{'url': i['url'], 'dateModified':i['dateModified']} for i in items if i.url != document.url]
                     items[0] = document
                 if not items:
                     from openprocurement.edge.utils import error_handler
@@ -39,7 +39,6 @@ def get_item(request, data):
                 else:
                     item = items[0]
     return item
-
 
 
 def tender_factory(request):
@@ -99,4 +98,3 @@ def plan_factory(request):
     request.validated['item'] = get_item(request, plan)
     request.validated['id'] = request.matchdict['plan_id']
     return plan
-

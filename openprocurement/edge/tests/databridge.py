@@ -2,19 +2,21 @@
 import unittest
 
 import datetime
-import io
 import os
 import logging
 import uuid
-from couchdb import Server, Database, Session
-from gevent import sleep
+from couchdb import Server
 from mock import MagicMock, patch
 from munch import munchify
 from openprocurement_client.exceptions import RequestFailed
-from openprocurement.edge.tests.base import test_tender_data, TenderBaseWebTest
+from openprocurement.edge.tests.base import TenderBaseWebTest
 from openprocurement.edge.databridge import EdgeDataBridge
-from openprocurement.edge.utils import DataBridgeConfigError, push_views, VALIDATE_BULK_DOCS_ID, VALIDATE_BULK_DOCS_UPDATE
-from requests.exceptions import ConnectionError
+from openprocurement.edge.utils import (
+    DataBridgeConfigError,
+    push_views,
+    VALIDATE_BULK_DOCS_ID,
+    VALIDATE_BULK_DOCS_UPDATE
+)
 
 
 logger = logging.getLogger()
@@ -67,7 +69,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         couchdb_url = self.config['main']['couch_url'] \
             + '/' + self.config['main']['db_name']
         for resource in ('/tenders', '/plans', '/contracts', '/auctions'):
-            push_views(couchapp_path=app_path+resource,
+            push_views(couchapp_path=app_path + resource,
                        couch_url=couchdb_url)
         validate_doc = {
             '_id': VALIDATE_BULK_DOCS_ID,
@@ -134,7 +136,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
         # Create EdgeDataBridge object with wrong config variable structure
         test_config = {
-           'mani': {
+            'mani': {
                 'resources_api_server': 'https://lb.api-sandbox.openprocurement.org',
                 'resources_api_version': "0",
                 'public_resources_api_server': 'https://lb.api-sandbox.openprocurement.org',
@@ -150,7 +152,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'version': 1
         }
         with self.assertRaises(DataBridgeConfigError) as e:
-             EdgeDataBridge(test_config)
+            EdgeDataBridge(test_config)
         self.assertEqual(e.exception.message, 'In config dictionary missed '
                          'section \'main\'')
 
@@ -190,8 +192,8 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
         test_config['main']['db_name'] = 'public'
         test_config['main']['resources_api_version'] = "0"
-        test_config['main']['public_resources_api_server'] = 'https://lb.api-sandbox.openprocurement.org'
-
+        test_config['main']['public_resources_api_server'] \
+            = 'https://lb.api-sandbox.openprocurement.org'
 
         # Create EdgeDataBridge object with deleting config variables step by step
         bridge = EdgeDataBridge(test_config)
@@ -221,7 +223,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
         test_config['main']['retrievers_params']['up_wait_sleep'] = 0
         with self.assertRaises(DataBridgeConfigError) as e:
-            bridge = EdgeDataBridge(test_config)
+            EdgeDataBridge(test_config)
         self.assertEqual(e.exception.message, 'Invalid \'up_wait_sleep\' in '
                          '\'retrievers_params\'. Value must be grater than 30.')
 
@@ -315,7 +317,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         result = bridge.resource_items_filter(uuid.uuid4().hex,
                                               date_modified_old)
         self.assertEqual(result, True)
-
 
     def test_config_get(self):
         test_config = {

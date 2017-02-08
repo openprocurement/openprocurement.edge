@@ -2,12 +2,6 @@
 from gevent import monkey
 monkey.patch_all()
 
-try:
-    import urllib3.contrib.pyopenssl
-    urllib3.contrib.pyopenssl.inject_into_urllib3()
-except ImportError:
-    pass
-
 import logging
 import logging.config
 import os
@@ -15,30 +9,27 @@ import psutil
 import argparse
 import uuid
 from yaml import load
-from urlparse import urljoin, urlparse
-from couchdb import Server, Session, ResourceNotFound
+from urlparse import urlparse
 from openprocurement_client.sync import get_resource_items
-from openprocurement_client.exceptions import InvalidResponse, RequestFailed
+from openprocurement_client.exceptions import RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
 from openprocurement.edge.collector import LogsCollector
 from openprocurement.edge.utils import (
-    VALIDATE_BULK_DOCS_ID,
-    VALIDATE_BULK_DOCS_UPDATE,
-    push_views,
     prepare_couchdb,
     prepare_couchdb_views,
     DataBridgeConfigError
 )
-
-import errno
-from socket import error
-from requests.exceptions import ConnectionError, MissingSchema
 import gevent.pool
-from gevent import spawn, sleep, idle
-from gevent.queue import Queue, Empty
+from gevent import spawn, sleep
+from gevent.queue import Queue
 from datetime import datetime
 from .workers import ResourceItemWorker
 
+try:
+    import urllib3.contrib.pyopenssl
+    urllib3.contrib.pyopenssl.inject_into_urllib3()
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -271,8 +262,8 @@ class EdgeDataBridge(object):
             add_to_retry=self.log_dict['add_to_retry'],
             droped=self.log_dict['droped'],
             skiped=self.log_dict['skiped'],
-            rss=self.process.memory_info().rss/1024/1024,
-            vms=self.process.memory_info().vms/1024/1024,
+            rss=self.process.memory_info().rss / 1024 / 1024,
+            vms=self.process.memory_info().vms / 1024 / 1024,
             exceptions_count=self.log_dict['exceptions_count'],
             not_found_count=self.log_dict['not_found_count'],
             not_actual_docs_count=self.log_dict['not_actual_docs_count'],
@@ -297,9 +288,9 @@ class EdgeDataBridge(object):
                     wi.shutdown()
                     logger.info('Queue controller: Kill main queue worker.')
             filled_resource_items_queue = int(
-                self.resource_items_queue.qsize()/(self.resource_items_queue_size / 100))
+                self.resource_items_queue.qsize() / (self.resource_items_queue_size / 100))
             logger.info('Resource items queue filled on {} %'.format(filled_resource_items_queue))
-            filled_retry_resource_items_queue = int(self.retry_resource_items_queue.qsize()/(self.retry_resource_items_queue_size / 100))
+            filled_retry_resource_items_queue = int(self.retry_resource_items_queue.qsize() / (self.retry_resource_items_queue_size / 100))
             logger.info('Retry resource items queue filled on {} %'.format(filled_retry_resource_items_queue))
             sleep(self.queues_controller_timeout)
 

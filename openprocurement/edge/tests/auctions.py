@@ -113,10 +113,12 @@ class AuctionResourceTest(AuctionBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in auctions]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in auctions]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in auctions]))
-
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in auctions]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in auctions]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in auctions]))
 
         while True:
             response = self.app.get('/auctions?offset={}'.format(offset))
@@ -149,7 +151,8 @@ class AuctionResourceTest(AuctionBaseWebTest):
         response = self.app.get('/auctions', params=[('opt_fields', 'status,enquiryPeriod')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'enquiryPeriod']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'enquiryPeriod']))
         self.assertIn('opt_fields=status%2CenquiryPeriod', response.json['next_page']['uri'])
 
         response = self.app.get('/auctions?descending=1')
@@ -157,8 +160,10 @@ class AuctionResourceTest(AuctionBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in auctions]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in auctions], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in auctions]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in auctions], reverse=True))
 
         response = self.app.get('/auctions?descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -212,9 +217,12 @@ class AuctionResourceTest(AuctionBaseWebTest):
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in auctions]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in auctions]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in auctions]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in auctions]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in auctions]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in auctions]))
 
         response = self.app.get('/auctions?feed=changes&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -237,10 +245,12 @@ class AuctionResourceTest(AuctionBaseWebTest):
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status']))
         self.assertIn('opt_fields=status', response.json['next_page']['uri'])
 
-        response = self.app.get('/auctions?feed=changes', params=[('opt_fields', 'status,enquiryPeriod')])
+        response = self.app.get('/auctions?feed=changes',
+                                params=[('opt_fields', 'status,enquiryPeriod')])
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json['data']), 3)
-        self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified', u'status', u'enquiryPeriod']))
+        self.assertEqual(set(response.json['data'][0]),
+                         set([u'id', u'dateModified', u'status', u'enquiryPeriod']))
         self.assertIn('opt_fields=status%2CenquiryPeriod', response.json['next_page']['uri'])
 
         response = self.app.get('/auctions?feed=changes&descending=1')
@@ -248,8 +258,10 @@ class AuctionResourceTest(AuctionBaseWebTest):
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in auctions]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in auctions], reverse=True))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in auctions]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in auctions], reverse=True))
 
         response = self.app.get('/auctions?feed=changes&descending=1&limit=2')
         self.assertEqual(response.status, '200 OK')
@@ -303,9 +315,12 @@ class AuctionResourceTest(AuctionBaseWebTest):
 
         self.assertEqual(len(response.json['data']), 3)
         self.assertEqual(set(response.json['data'][0]), set([u'id', u'dateModified']))
-        self.assertEqual(set([i['id'] for i in response.json['data']]), set([i['id'] for i in auctions]))
-        self.assertEqual(set([i['dateModified'] for i in response.json['data']]), set([i['dateModified'] for i in auctions]))
-        self.assertEqual([i['dateModified'] for i in response.json['data']], sorted([i['dateModified'] for i in auctions]))
+        self.assertEqual(set([i['id'] for i in response.json['data']]),
+                         set([i['id'] for i in auctions]))
+        self.assertEqual(set([i['dateModified'] for i in response.json['data']]),
+                         set([i['dateModified'] for i in auctions]))
+        self.assertEqual([i['dateModified'] for i in response.json['data']],
+                         sorted([i['dateModified'] for i in auctions]))
 
 
 def suite():

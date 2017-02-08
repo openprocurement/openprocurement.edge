@@ -5,7 +5,6 @@ import os
 from datetime import datetime, timedelta
 from copy import deepcopy
 from openprocurement.edge.utils import get_now
-from openprocurement.edge.design import sync_design
 from openprocurement.edge.utils import push_views
 from uuid import uuid4
 
@@ -123,36 +122,36 @@ test_lots = [
 test_contract_data = {
     u"items": [
         {
-        u"description": u"футляри до державних нагород",
-        u"classification": {
-            u"scheme": u"CPV",
-            u"description": u"Cartons",
-            u"id": u"44617100-9"
-        },
-        u"additionalClassifications": [
-            {
-                u"scheme": u"ДКПП",
-                u"id": u"17.21.1",
-                u"description": u"папір і картон гофровані, паперова й картонна тара"
-            }
-        ],
-        u"deliveryAddress": {
-                        u"postalCode": u"79000",
-                        u"countryName": u"Україна",
-                        u"streetAddress": u"вул. Банкова 1",
-                        u"region": u"м. Київ",
-                        u"locality": u"м. Київ"
-                    },
-        u"deliveryDate": {
-                        u"startDate": u"2016-03-20T18:47:47.136678+02:00",
-                        u"endDate": u"2016-03-23T18:47:47.136678+02:00"
-                    },
-        u"id": u"c6c6e8ed4b1542e4bf13d3f98ec5ab59",
-        u"unit": {
-            u"code": u"44617100-9",
-            u"name": u"item"
-        },
-        u"quantity": 5
+            u"description": u"футляри до державних нагород",
+            u"classification": {
+                u"scheme": u"CPV",
+                u"description": u"Cartons",
+                u"id": u"44617100-9"
+            },
+            u"additionalClassifications": [
+                {
+                    u"scheme": u"ДКПП",
+                    u"id": u"17.21.1",
+                    u"description": u"папір і картон гофровані, паперова й картонна тара"
+                }
+            ],
+            u"deliveryAddress": {
+                u"postalCode": u"79000",
+                u"countryName": u"Україна",
+                u"streetAddress": u"вул. Банкова 1",
+                u"region": u"м. Київ",
+                u"locality": u"м. Київ"
+            },
+            u"deliveryDate": {
+                u"startDate": u"2016-03-20T18:47:47.136678+02:00",
+                u"endDate": u"2016-03-23T18:47:47.136678+02:00"
+            },
+            u"id": u"c6c6e8ed4b1542e4bf13d3f98ec5ab59",
+            u"unit": {
+                u"code": u"44617100-9",
+                u"name": u"item"
+            },
+            u"quantity": 5
         }
     ],
     u"procuringEntity": {
@@ -176,36 +175,36 @@ test_contract_data = {
     },
     u"suppliers": [
         {
-        u"contactPoint": {
-            u"email": u"aagt@gmail.com",
-            u"telephone": u"+380 (322) 91-69-30",
-            u"name": u"Андрій Олексюк"
-        },
-        u"identifier": {
-            u"scheme": u"UA-EDR",
-            u"id": u"00137226",
-            u"uri": u"http://www.sc.gov.ua/"
-        },
-        u"name": u"ДКП «Книга»",
-        u"address": {
-                    u"postalCode": u"79013",
-                    u"countryName": u"Україна",
-                    u"streetAddress": u"вул. Островського, 34",
-                    u"region": u"м. Львів",
-                    u"locality": u"м. Львів"
-                    }
+            u"contactPoint": {
+                u"email": u"aagt@gmail.com",
+                u"telephone": u"+380 (322) 91-69-30",
+                u"name": u"Андрій Олексюк"
+            },
+            u"identifier": {
+                u"scheme": u"UA-EDR",
+                u"id": u"00137226",
+                u"uri": u"http://www.sc.gov.ua/"
+            },
+            u"name": u"ДКП «Книга»",
+            u"address": {
+                u"postalCode": u"79013",
+                u"countryName": u"Україна",
+                u"streetAddress": u"вул. Островського, 34",
+                u"region": u"м. Львів",
+                u"locality": u"м. Львів"
+            }
         }
     ],
     u"contractNumber": u"contract #13111",
     u"period": {
-                u"startDate": u"2016-03-18T18:47:47.155143+02:00",
-                u"endDate": u"2017-03-18T18:47:47.155143+02:00"
-            },
+        u"startDate": u"2016-03-18T18:47:47.155143+02:00",
+        u"endDate": u"2017-03-18T18:47:47.155143+02:00"
+    },
     u"value": {
         u"currency": u"UAH",
         u"amount": 238.0,
         u"valueAddedTaxIncluded": True
-        },
+    },
     u"dateSigned": get_now().isoformat(),
     u"awardID": u"8481d7eb01694c25b18658036c236c5d",
     u"id": uuid4().hex,
@@ -215,122 +214,126 @@ test_contract_data = {
     u"owner": u"broker"
 }
 
-test_plan_data =  {
-        "tender": {
-            "procurementMethod": u"open",
-            "procurementMethodType": u"belowThreshold",
-            "tenderPeriod": {
-                "startDate": (now + timedelta(days=7)).isoformat()
-            }
-        },
-        "items": [
-            {
-                "deliveryDate": {
-                    "endDate": (now + timedelta(days=15)).isoformat()
-                },
-                "additionalClassifications": [
-                    {
-                        "scheme": u"ДКПП",
-                        "id": u"01.11.92",
-                        "description": u"Насіння гірчиці"
-                    }
-                ],
-                "unit": {
-                    "code": u"KGM",
-                    "name": u"кг"
-                },
-                "classification": {
-                    "scheme": u"CPV",
-                    "description": u"Mustard seeds",
-                    "id": u"03111600-8"
-                },
-                "quantity": 1000,
-                "description": u"Насіння гірчиці"
-            },
-            {
-                "deliveryDate": {
-                    "endDate": (now + timedelta(days=16)).isoformat()
-                },
-                "additionalClassifications": [
-                    {
-                        "scheme": u"ДКПП",
-                        "id": u"01.11.95",
-                        "description": u"Насіння соняшнику"
-                    }
-                ],
-                "unit": {
-                    "code": u"KGM",
-                    "name": u"кг"
-                },
-                "classification": {
-                    "scheme": u"CPV",
-                    "description": u"Sunflower seeds",
-                    "id": u"03111300-5"
-                },
-                "quantity": 2000,
-                "description": u"Насіння соняшнику"
-            },
-            {
-                "deliveryDate": {
-                    "endDate": (now + timedelta(days=17)).isoformat()
-                },
-                "additionalClassifications": [
-                    {
-                        "scheme": u"ДКПП",
-                        "id": u"01.11.84",
-                        "description": u"Насіння бавовнику"
-                    }
-                ],
-                "unit": {
-                    "code": u"KGM",
-                    "name": u"кг"
-                },
-                "classification": {
-                    "scheme": u"CPV",
-                    "description": u"Cotton seeds",
-                    "id": u"03111400-6"
-                },
-                "quantity": 3000,
-                "description": u"Насіння бавовнику"
-            }
-        ],
-        "classification": {
-            "scheme": u"CPV",
-            "description": u"Seeds",
-            "id": u"03111000-2"
-        },
-        "additionalClassifications": [
-            {
-                "scheme": u"КЕКВ",
-                "id": u"1",
-                "description": u"-"
-            }
-        ],
-        "procuringEntity": {
-            "identifier": {
-                "scheme": u"UA-EDR",
-                "id": u"111983",
-                "legalName": u"ДП Державне Управління Справами"
-            },
-            "name": u"ДУС"
-        },
-        "budget": {
-            "project": {
-                "name": u"proj_name",
-                "id": u"123"
-            },
-            "amount": 10000,
-            "amountNet": 12222,
-            "currency": u"UAH",
-            "id": u"12303111000-2",
-            "description": u"budget_description"
+test_plan_data = {
+    "tender": {
+        "procurementMethod": u"open",
+        "procurementMethodType": u"belowThreshold",
+        "tenderPeriod": {
+            "startDate": (now + timedelta(days=7)).isoformat()
         }
+    },
+    "items": [
+        {
+            "deliveryDate": {
+                "endDate": (now + timedelta(days=15)).isoformat()
+            },
+            "additionalClassifications": [
+                {
+                    "scheme": u"ДКПП",
+                    "id": u"01.11.92",
+                    "description": u"Насіння гірчиці"
+                }
+            ],
+            "unit": {
+                "code": u"KGM",
+                "name": u"кг"
+            },
+            "classification": {
+                "scheme": u"CPV",
+                "description": u"Mustard seeds",
+                "id": u"03111600-8"
+            },
+            "quantity": 1000,
+            "description": u"Насіння гірчиці"
+        },
+        {
+            "deliveryDate": {
+                "endDate": (now + timedelta(days=16)).isoformat()
+            },
+            "additionalClassifications": [
+                {
+                    "scheme": u"ДКПП",
+                    "id": u"01.11.95",
+                    "description": u"Насіння соняшнику"
+                }
+            ],
+            "unit": {
+                "code": u"KGM",
+                "name": u"кг"
+            },
+            "classification": {
+                "scheme": u"CPV",
+                "description": u"Sunflower seeds",
+                "id": u"03111300-5"
+            },
+            "quantity": 2000,
+            "description": u"Насіння соняшнику"
+        },
+        {
+            "deliveryDate": {
+                "endDate": (now + timedelta(days=17)).isoformat()
+            },
+            "additionalClassifications": [
+                {
+                    "scheme": u"ДКПП",
+                    "id": u"01.11.84",
+                    "description": u"Насіння бавовнику"
+                }
+            ],
+            "unit": {
+                "code": u"KGM",
+                "name": u"кг"
+            },
+            "classification": {
+                "scheme": u"CPV",
+                "description": u"Cotton seeds",
+                "id": u"03111400-6"
+            },
+            "quantity": 3000,
+            "description": u"Насіння бавовнику"
+        }
+    ],
+    "classification": {
+        "scheme": u"CPV",
+        "description": u"Seeds",
+        "id": u"03111000-2"
+    },
+    "additionalClassifications": [
+        {
+            "scheme": u"КЕКВ",
+            "id": u"1",
+            "description": u"-"
+        }
+    ],
+    "procuringEntity": {
+        "identifier": {
+            "scheme": u"UA-EDR",
+            "id": u"111983",
+            "legalName": u"ДП Державне Управління Справами"
+        },
+        "name": u"ДУС"
+    },
+    "budget": {
+        "project": {
+            "name": u"proj_name",
+            "id": u"123"
+        },
+        "amount": 10000,
+        "amountNet": 12222,
+        "currency": u"UAH",
+        "id": u"12303111000-2",
+        "description": u"budget_description"
     }
+}
 
 
 test_award = {'suppliers': [test_organization], 'status': 'pending', 'bid_id': ''}
 
-test_complaint = {'title': 'complaint title', 'description': 'complaint description', 'author': test_organization}
+test_complaint = {
+    'title': 'complaint title',
+    'description': 'complaint description',
+    'author': test_organization
+}
 
 test_document = {
     'title': 'укр.doc',
@@ -347,13 +350,13 @@ for bid in test_auction_bids:
 VERSION = '0'
 ROUTE_PREFIX = '/api/{}'.format(VERSION)
 
+
 class PrefixedRequestClass(webtest.app.TestRequest):
 
     @classmethod
     def blank(cls, path, *args, **kwargs):
         path = '/api/%s%s' % (VERSION, path)
         return webtest.app.TestRequest.blank(path, *args, **kwargs)
-
 
 
 class BaseWebTest(unittest.TestCase):
@@ -391,7 +394,7 @@ class BaseWebTest(unittest.TestCase):
         self.db_name += uuid4().hex
         self.couchdb_server.create(self.db_name)
         db = self.couchdb_server[self.db_name]
-        #sync_design(db)
+        # sync_design(db)
         couchapp_path = os.path.dirname(os.path.abspath(__file__))
         couchapp_path = couchapp_path.split('/')
         views_path = ''
@@ -399,16 +402,16 @@ class BaseWebTest(unittest.TestCase):
             views_path += i + '/'
         views_path += 'couch_views'
         couch_url = self.app.app.registry.settings['couchdb.url'] + db.name
-        push_views(couchapp_path=views_path+'/tenders', couch_url=couch_url)
-        push_views(couchapp_path=views_path+'/contracts', couch_url=couch_url)
-        push_views(couchapp_path=views_path+'/plans', couch_url=couch_url)
-        push_views(couchapp_path=views_path+'/auctions', couch_url=couch_url)
-        #import pdb; pdb.set_trace()
+        push_views(couchapp_path=views_path + '/tenders', couch_url=couch_url)
+        push_views(couchapp_path=views_path + '/contracts', couch_url=couch_url)
+        push_views(couchapp_path=views_path + '/plans', couch_url=couch_url)
+        push_views(couchapp_path=views_path + '/auctions', couch_url=couch_url)
+        # import pdb; pdb.set_trace()
         self.app.app.registry.db = db
         self.db = self.app.app.registry.db
         self.db_name = self.db.name
         self.app.authorization = ('Basic', ('token', ''))
-        #self.app.authorization = ('Basic', ('broker', ''))
+        # self.app.authorization = ('Basic', ('broker', ''))
 
     def tearDown(self):
         self.couchdb_server.delete(self.db_name)
@@ -529,7 +532,6 @@ class AuctionBaseWebTest(BaseWebTest):
 class ContractBaseWebTest(BaseWebTest):
     initial_data = test_contract_data
     initial_document = test_document
-
 
     def create_contract(self, initial_data=initial_data):
         data = deepcopy(initial_data)

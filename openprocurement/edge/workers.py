@@ -3,11 +3,8 @@ from gevent import monkey
 monkey.patch_all()
 
 from datetime import datetime
-import gevent
 from gevent import Greenlet
-from gevent import spawn, sleep, idle
-from gevent.queue import Queue, Empty
-import json
+from gevent import spawn, sleep
 import logging
 import logging.config
 from openprocurement_client.exceptions import (
@@ -17,6 +14,7 @@ from openprocurement_client.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 class ResourceItemWorker(Greenlet):
 
@@ -200,8 +198,8 @@ class ResourceItemWorker(Greenlet):
 
     def _save_bulk_docs(self):
         if (len(self.bulk) > self.bulk_save_limit or
-                (datetime.now() - self.start_time).total_seconds() \
-                    > self.bulk_save_interval or self.exit):
+                (datetime.now() - self.start_time).total_seconds() >
+                self.bulk_save_interval or self.exit):
             try:
                 res = self.db.update(self.bulk.values())
                 logger.info('Save bulk docs to db.')

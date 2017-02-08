@@ -4,15 +4,13 @@ import logging
 import os
 import uuid
 from couchdb import Server
-from mock import MagicMock, patch
+from mock import patch
 from openprocurement.edge.utils import (
     VALIDATE_BULK_DOCS_ID,
     VALIDATE_BULK_DOCS_UPDATE,
     prepare_couchdb,
-    prepare_couchdb_views,
     DataBridgeConfigError,
     route_prefix,
-    context_unpack,
     push_views
 )
 
