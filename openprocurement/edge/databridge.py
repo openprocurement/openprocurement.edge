@@ -273,7 +273,9 @@ class EdgeDataBridge(object):
 
     def queues_controller(self):
         while True:
-            if self.workers_pool.free_count() > 0 and (self.resource_items_queue.qsize() > int((self.resource_items_queue_size / 100) * self.workers_inc_threshold)):
+            if (self.workers_pool.free_count() > 0 and
+                (self.resource_items_queue.qsize() >
+                 int((self.resource_items_queue_size / 100) * self.workers_inc_threshold))):
                 self.create_api_client()
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
                                              self.resource_items_queue,
@@ -282,16 +284,21 @@ class EdgeDataBridge(object):
                                              self.log_dict)
                 self.workers_pool.add(w)
                 logger.info('Queue controller: Create main queue worker.')
-            elif self.resource_items_queue.qsize() < int((self.resource_items_queue_size / 100) * self.workers_dec_threshold):
+            elif (self.resource_items_queue.qsize() <
+                  int((self.resource_items_queue_size / 100) * self.workers_dec_threshold)):
                 if len(self.workers_pool) > self.workers_min:
                     wi = self.workers_pool.greenlets.pop()
                     wi.shutdown()
+                    self.api_clients_queue.get()
                     logger.info('Queue controller: Kill main queue worker.')
             filled_resource_items_queue = int(
                 self.resource_items_queue.qsize() / (self.resource_items_queue_size / 100))
             logger.info('Resource items queue filled on {} %'.format(filled_resource_items_queue))
-            filled_retry_resource_items_queue = int(self.retry_resource_items_queue.qsize() / (self.retry_resource_items_queue_size / 100))
-            logger.info('Retry resource items queue filled on {} %'.format(filled_retry_resource_items_queue))
+            filled_retry_resource_items_queue \
+                = int(self.retry_resource_items_queue.qsize() /
+                      (self.retry_resource_items_queue_size / 100))
+            logger.info('Retry resource items queue filled on {} %'.format(
+                filled_retry_resource_items_queue))
             sleep(self.queues_controller_timeout)
 
     def gevent_watcher(self):
@@ -320,7 +327,6 @@ class EdgeDataBridge(object):
                                              self.log_dict)
                 self.retry_workers_pool.add(w)
                 logger.info('Watcher: Create retry queue worker.')
-                self.create_api_client()
 
     def run(self):
         logger.info('Start Edge Bridge',
