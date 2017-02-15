@@ -124,7 +124,8 @@ class EdgeDataBridge(object):
         # Default values for statistic variables
         for key in ('not_actual_docs_count', 'update_documents', 'droped',
                     'add_to_resource_items_queue', 'save_documents', 'skiped',
-                    'add_to_retry', 'exceptions_count', 'not_found_count'):
+                    'add_to_retry', 'exceptions_count', 'not_found_count',
+                    'timeshift'):
             self.log_dict[key] = 0
 
         if self.api_host != '' and self.api_host is not None:
@@ -193,7 +194,6 @@ class EdgeDataBridge(object):
                 resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
 
             input_dict[resource_item['id']] = resource_item['dateModified']
-
             logger.debug('Recieved from sync {}: {} {}'.format(
                 self.workers_config['resource'][:-1], resource_item['id'],
                 resource_item['dateModified']
@@ -238,15 +238,8 @@ class EdgeDataBridge(object):
             return True
 
     def reset_log_counters(self):
-        self.log_dict['not_actual_docs_count'] = 0
-        self.log_dict['add_to_retry'] = 0
-        self.log_dict['droped'] = 0
-        self.log_dict['update_documents'] = 0
-        self.log_dict['save_documents'] = 0
-        self.log_dict['skiped'] = 0
-        self.log_dict['not_found_count'] = 0
-        self.log_dict['exceptions_count'] = 0
-        self.log_dict['add_to_resource_items_queue'] = 0
+        for key in self.log_dict.keys():
+            self.log_dict[key] = 0
 
     def bridge_stats(self):
         return dict(
@@ -268,7 +261,8 @@ class EdgeDataBridge(object):
             not_found_count=self.log_dict['not_found_count'],
             not_actual_docs_count=self.log_dict['not_actual_docs_count'],
             add_to_resource_items_queue=self.log_dict['add_to_resource_items_queue'],
-            resource=self.workers_config['resource']
+            resource=self.workers_config['resource'],
+            timeshift=self.log_dict['timeshift']
         )
 
     def queues_controller(self):

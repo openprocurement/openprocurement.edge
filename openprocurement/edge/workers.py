@@ -2,9 +2,12 @@
 from gevent import monkey
 monkey.patch_all()
 
+import os
 from datetime import datetime
 from gevent import Greenlet
 from gevent import spawn, sleep
+from iso8601 import parse_date
+from pytz import timezone
 import logging
 import logging.config
 from openprocurement_client.exceptions import (
@@ -14,6 +17,8 @@ from openprocurement_client.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+TZ = timezone(os.environ['TZ'] if 'TZ' in os.environ else 'Europe/Kiev')
 
 
 class ResourceItemWorker(Greenlet):
@@ -123,7 +128,8 @@ class ResourceItemWorker(Greenlet):
             return None
         except RequestFailed as e:
             if e.status_code == 429:
-                if api_client_dict['request_interval'] > self.config['drop_threshold_client_cookies']:
+                if (api_client_dict['request_interval'] >
+                        self.config['drop_threshold_client_cookies']):
                     api_client_dict['client'].session.cookies.clear()
                     api_client_dict['request_interval'] = 0
                 else:
@@ -196,13 +202,25 @@ class ResourceItemWorker(Greenlet):
                 resource_item['dateModified']))
         return
 
+    def _get_average_timeshift(self):
+        delay_list = []
+        for resource_item in self.bulk.values():
+            delay_list.append((datetime.now(TZ) -
+                               parse_date(resource_item['dateModified'])).total_seconds())
+        timeshift = sum(delay_list) / len(delay_list)
+        return round(timeshift, 2)
+
     def _save_bulk_docs(self):
         if (len(self.bulk) > self.bulk_save_limit or
                 (datetime.now() - self.start_time).total_seconds() >
                 self.bulk_save_interval or self.exit):
             try:
                 res = self.db.update(self.bulk.values())
+                self.log_dict['timeshift'] = self._get_average_timeshift()
                 logger.info('Save bulk docs to db.')
+                logger.info('Average timeshift {} bulk is: {} sec.'.format(
+                    self.config['resource'], self.log_dict['timeshift']
+                ))
             except Exception as e:
                 logger.error('Error while saving bulk_docs in db: {}'.format(
                     e.message
@@ -258,7 +276,8 @@ class ResourceItemWorker(Greenlet):
 
             # Try get resource item from local storage
             try:
-                resource_item_doc = self.db.get(queue_resource_item['id'])  # Resource object from local db server
+                # Resource object from local db server
+                resource_item_doc = self.db.get(queue_resource_item['id'])
                 if queue_resource_item['dateModified'] is None:
                     public_doc = self._get_resource_item_from_public(
                         api_client_dict, queue_resource_item)
@@ -271,7 +290,9 @@ class ResourceItemWorker(Greenlet):
                     if api_client_dict is None:
                         self.add_to_retry_queue(queue_resource_item)
                         continue
-                if resource_item_doc and resource_item_doc['dateModified'] >= queue_resource_item['dateModified']:
+                if (resource_item_doc and
+                        resource_item_doc['dateModified'] >=
+                        queue_resource_item['dateModified']):
                     self.log_dict['skiped'] += 1
                     logger.debug('Ignored {} {} QUEUE - {}, EDGE - {}'.format(
                         self.config['resource'][:-1],
