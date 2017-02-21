@@ -56,6 +56,9 @@ class LogsCollector(object):
 
     def save(self, log_document):
         try:
+            doc = self.db.get(log_document['_id'])
+            if doc is not None:
+                log_document['_rev'] = doc['_rev']
             self.db.save(log_document)
             logger.info(self.dict_to_str_vpl(log_document))
         except Exception as e:

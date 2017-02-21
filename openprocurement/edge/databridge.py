@@ -243,6 +243,7 @@ class EdgeDataBridge(object):
 
     def bridge_stats(self):
         return dict(
+            _id=self.workers_config['resource'],
             time=datetime.now().isoformat(),
             resource_items_queue_size=self.resource_items_queue.qsize(),
             retry_resource_items_queue_size=self.retry_resource_items_queue.qsize(),
