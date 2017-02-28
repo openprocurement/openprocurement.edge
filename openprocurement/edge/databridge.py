@@ -8,9 +8,11 @@ import os
 import psutil
 import argparse
 import uuid
+from couchdb import Server, Session
+from httplib import IncompleteRead
 from yaml import load
 from urlparse import urlparse
-from openprocurement_client.sync import get_resource_items
+from openprocurement_client.sync import ResourceFeeder, FINISHED
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
 from openprocurement.edge.collector import LogsCollector
@@ -146,9 +148,19 @@ class EdgeDataBridge(object):
                 'log_db': self.log_db_name
             }
         }
+        self.server = Server(self.couch_url, session=Session(retry_delays=range(10)))
         self.logger = LogsCollector(collector_config)
         self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.workers_config['resource'])
+        extra_params = {
+            'mode': self.retrieve_mode,
+            'limit': self.resource_items_limit
+        }
+        self.feeder = ResourceFeeder(host=self.api_host, version=self.api_version, key='',
+                                     resource=self.workers_config['resource'],
+                                     extra_params=extra_params,
+                                     retrievers_params=self.retrievers_params,
+                                     adaptive=True)
 
     def config_get(self, name):
         try:
@@ -188,11 +200,7 @@ class EdgeDataBridge(object):
     def fill_resource_items_queue(self):
         start_time = datetime.now()
         input_dict = {}
-        for resource_item in get_resource_items(
-                host=self.api_host, version=self.api_version, key='',
-                extra_params={'mode': self.retrieve_mode, 'limit': self.resource_items_limit},
-                resource=self.workers_config['resource'], retrievers_params=self.retrievers_params):
-
+        for resource_item in self.feeder.get_resource_items():
             input_dict[resource_item['id']] = resource_item['dateModified']
             logger.debug('Recieved from sync {}: {} {}'.format(
                 self.workers_config['resource'][:-1], resource_item['id'],
@@ -200,8 +208,22 @@ class EdgeDataBridge(object):
             ))
             if (len(input_dict) > self.bulk_query_limit or
                     (datetime.now() - start_time).total_seconds() > self.bulk_query_interval):
-                rows = self.db.view(self.view_path, keys=input_dict.values())
-                resp_dict = {k.id: k.key for k in rows}
+                retry_count = 0
+                sleep_before_retry = 5
+                while True:
+                    try:
+                        rows = self.db.view(self.view_path, keys=input_dict.values())
+                        resp_dict = {k.id: k.key for k in rows}
+                        break
+                    except IncompleteRead as e:
+                        if retry_count > 3:
+                            raise e
+                        logger.error('IncompleteRead: {}'.format(e.message))
+                        logger.info('Fill thread sleep {} sec.'.format(sleep_before_retry))
+                        sleep(sleep_before_retry)
+                        sleep_before_retry *= 2
+                        retry_count += 1
+                        continue
                 for item_id, date_modified in input_dict.items():
                     if item_id in resp_dict and date_modified == resp_dict[item_id]:
                         self.log_dict['skiped'] += 1
@@ -242,6 +264,15 @@ class EdgeDataBridge(object):
             self.log_dict[key] = 0
 
     def bridge_stats(self):
+        sync_forward_last_response =\
+            (datetime.now() - self.feeder.forward_info.get('last_response',
+                                                           datetime.now())).total_seconds()
+        if self.feeder.backward_info.get('status') == FINISHED:
+            sync_backward_last_response = 0
+        else:
+            sync_backward_last_response =\
+                (datetime.now() - self.feeder.backward_info.get('last_response',
+                                                                datetime.now())).total_seconds()
         return dict(
             _id=self.workers_config['resource'],
             time=datetime.now().isoformat(),
@@ -263,7 +294,12 @@ class EdgeDataBridge(object):
             not_actual_docs_count=self.log_dict['not_actual_docs_count'],
             add_to_resource_items_queue=self.log_dict['add_to_resource_items_queue'],
             resource=self.workers_config['resource'],
-            timeshift=self.log_dict['timeshift']
+            timeshift=self.log_dict['timeshift'],
+            sync_queue=self.feeder.queue.qsize(),
+            sync_forward_response_len=self.feeder.forward_info.get('resource_item_count', 0),
+            sync_backward_response_len=self.feeder.backward_info.get('resource_item_count', 0),
+            sync_forward_last_response=sync_forward_last_response,
+            sync_backward_last_response=sync_backward_last_response
         )
 
     def queues_controller(self):
@@ -297,6 +333,13 @@ class EdgeDataBridge(object):
             sleep(self.queues_controller_timeout)
 
     def gevent_watcher(self):
+        for t in self.server.tasks():
+            if (t['type'] == 'indexer' and t['database'] == self.db_name and
+                    t.get('design_document', None) == '_design/{}'.format(
+                        self.workers_config['resource'])):
+                logger.info('Watcher: Waiting for end of view indexing. Current'
+                            ' progress: {} %'.format(t['progress']))
+            # import pdb; pdb.set_trace()
         spawn(self.logger.save, self.bridge_stats())
         self.reset_log_counters()
         for i in xrange(0, self.filter_workers_pool.free_count()):

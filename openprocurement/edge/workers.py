@@ -264,6 +264,7 @@ class ResourceItemWorker(Greenlet):
             # Try get api client from clients queue
             api_client_dict = self._get_api_client_dict()
             if api_client_dict is None:
+                logger.debug('API clients queue is empty.')
                 sleep(self.config['worker_sleep'])
                 continue
 
@@ -271,6 +272,7 @@ class ResourceItemWorker(Greenlet):
             queue_resource_item = self._get_resource_item_from_queue()
             if queue_resource_item is None:
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('Resource items queue is empty.')
                 sleep(self.config['worker_sleep'])
                 continue
 
