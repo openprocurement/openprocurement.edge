@@ -6,6 +6,7 @@ from cornice.util import json_error
 from couchapp.dispatch import dispatch
 from couchdb import Server, Session
 from datetime import datetime
+from gevent.queue import Empty
 from socket import error
 from Crypto.Cipher import AES
 from functools import partial
@@ -14,12 +15,7 @@ from logging import getLogger
 from pkg_resources import get_distribution
 from pytz import timezone
 from webob.multidict import NestedMultiDict
-from openprocurement.edge.traversal import (
-    auction_factory,
-    contract_factory,
-    plan_factory,
-    tender_factory
-)
+from openprocurement.edge.traversal import resource_factory
 
 PKG = get_distribution(__package__)
 LOGGER = getLogger(PKG.project_name)
@@ -142,10 +138,6 @@ def error_handler(errors, request_params=True):
     if errors.request.matchdict:
         for x, j in errors.request.matchdict.items():
             params[x.upper()] = j
-    if 'tender' in errors.request.validated:
-        params['TENDER_REV'] = errors.request.validated['tender']._rev
-        params['TENDERID'] = errors.request.validated['tender'].tenderID
-        params['TENDER_STATUS'] = errors.request.validated['tender'].status
     LOGGER.info('Error on processing request "{}"'.format(dumps(errors,
                                                                 indent=4)),
                 extra=context_unpack(errors.request,
@@ -154,13 +146,13 @@ def error_handler(errors, request_params=True):
 
 
 opresource = partial(resource, error_handler=error_handler,
-                     factory=tender_factory)
+                     factory=resource_factory)
 eaopresource = partial(resource, error_handler=error_handler,
-                       factory=auction_factory)
+                       factory=resource_factory)
 contractingresource = partial(resource, error_handler=error_handler,
-                              factory=contract_factory)
+                              factory=resource_factory)
 planningresource = partial(resource, error_handler=error_handler,
-                           factory=plan_factory)
+                           factory=resource_factory)
 
 
 def push_views(couchapp_path=None, couch_url=None):
@@ -250,3 +242,20 @@ def decrypt(uuid, name, key):
     except:
         text = ''
     return text
+
+
+def clear_api_client_queue(queue, clients_info):
+    tmp = []
+    while not queue.empty():
+        try:
+            client_dict = queue.get()
+            if clients_info[client_dict['id']]['destroy']:
+                LOGGER.info('Drop lazy api_client {}'.format(client_dict['id']))
+                del clients_info[client_dict['id']]
+                del client_dict
+            else:
+                tmp.append(client_dict)
+        except Empty:
+            break
+    for c in tmp:
+        queue.put(c)

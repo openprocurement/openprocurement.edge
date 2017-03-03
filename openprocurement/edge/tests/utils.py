@@ -4,14 +4,18 @@ import logging
 import os
 import uuid
 from couchdb import Server
-from mock import patch
+from gevent.queue import Queue
+from mock import patch, MagicMock
 from openprocurement.edge.utils import (
     VALIDATE_BULK_DOCS_ID,
     VALIDATE_BULK_DOCS_UPDATE,
     prepare_couchdb,
     DataBridgeConfigError,
     route_prefix,
-    push_views
+    push_views,
+    update_logging_context,
+    fix_url,
+    clear_api_client_queue
 )
 
 logger = logging.getLogger()
@@ -28,6 +32,24 @@ class TestUtils(unittest.TestCase):
             del server[self.db_name]
         except:
             pass
+
+    def test_update_logging_context(self):
+        request = MagicMock()
+        request.get.return_value = None
+        params = {'id': uuid.uuid4().hex, 'User-Agent': 'Best agent 6.0'}
+        update_logging_context(request, params)
+        self.assertEqual(request.logging_context['ID'], params['id'])
+        self.assertEqual(request.logging_context['USER-AGENT'], params['User-Agent'])
+
+    def test_fix_url(self):
+        url = "/tenders/ttt/bids/bbb/documents/ddd?download=very_big_doc"
+        item = {
+            "format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "url": url
+        }
+        res = fix_url(item, 'https://public.api-sandbox.openprocurement.org')
+        self.assertEqual(item['url'], 'https://public.api-sandbox.openprocurement.org' +\
+                         '/api/1.0' + url)
 
     def test_prepare_couchdb(self):
         # Database don't exist.
@@ -79,6 +101,29 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(DataBridgeConfigError) as e:
             push_views(couchapp_path='/haha', couch_url='')
         self.assertEqual(e.exception.message, 'Invalid path to couchapp.')
+
+    def test_clear_api_client_queue(self):
+        queue = Queue()
+        client_dict = {
+            'id': uuid.uuid4().hex,
+            'client': None
+        }
+        client_dict2 = {
+            'id': uuid.uuid4().hex,
+            'client': None
+        }
+        clients_info = {
+            client_dict['id']: {'destroy': False},
+            client_dict2['id']: {'destroy': True}
+        }
+        queue.put(client_dict)
+        queue.put(client_dict2)
+
+        self.assertEqual(queue.qsize(), 2)
+        clear_api_client_queue(queue, clients_info)
+        self.assertEqual(queue.qsize(), 1)
+        client_dict_from_queue = queue.get()
+        self.assertEqual(client_dict, client_dict_from_queue)
 
 
 def suite():
