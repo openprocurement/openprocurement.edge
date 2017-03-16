@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from gevent import Greenlet
 from gevent import spawn, sleep
+from gevent.queue import Empty
 from iso8601 import parse_date
 from pytz import timezone
 import logging
@@ -25,7 +26,7 @@ class ResourceItemWorker(Greenlet):
 
     def __init__(self, api_clients_queue=None, resource_items_queue=None,
                  db=None, config_dict=None, retry_resource_items_queue=None,
-                 log_dict=None):
+                 log_dict=None, api_clients_info=None):
         Greenlet.__init__(self)
         self.exit = False
         self.update_doc = False
@@ -39,6 +40,7 @@ class ResourceItemWorker(Greenlet):
         self.bulk_save_limit = self.config['bulk_save_limit']
         self.bulk_save_interval = self.config['bulk_save_interval']
         self.start_time = datetime.now()
+        self.api_clients_info = api_clients_info
 
     def add_to_retry_queue(self, resource_item, status_code=0):
         timeout = resource_item.get('timeout') or self.config['retry_default_timeout']
@@ -65,11 +67,20 @@ class ResourceItemWorker(Greenlet):
 
     def _get_api_client_dict(self):
         if not self.api_clients_queue.empty():
-            api_client_dict = self.api_clients_queue.get(
-                timeout=self.config['queue_timeout'])
-            logger.info('Got api_client {}'.format(
-                api_client_dict['client'].session.headers['User-Agent']
-            ))
+            while True:
+                try:
+                    api_client_dict = self.api_clients_queue.get(
+                        timeout=self.config['queue_timeout'])
+                except Empty:
+                    return None
+                if self.api_clients_info[api_client_dict['id']]['destroy']:
+                    logger.info('Drop lazy api_client {}'.format(api_client_dict['id']))
+                    del self.api_clients_info[api_client_dict['id']]
+                    del api_client_dict
+                else:
+                    break
+            logger.info('Got api_client ID: {} {}'.format(
+                api_client_dict['id'], api_client_dict['client'].session.headers['User-Agent']))
             return api_client_dict
         else:
             return None
@@ -91,8 +102,13 @@ class ResourceItemWorker(Greenlet):
             logger.info('Request interval {} sec. for client {}'.format(
                 api_client_dict['request_interval'],
                 api_client_dict['client'].session.headers['User-Agent']))
+            start_request = datetime.now()
             resource_item = api_client_dict['client'].get_resource_item(
                 queue_resource_item['id']).get('data')  # Resource object from api server
+            self.api_clients_info[api_client_dict['id']]['request_durations'][datetime.now()] =\
+                (datetime.now() - start_request).total_seconds()
+            self.api_clients_info[api_client_dict['id']]['request_interval'] =\
+                api_client_dict['request_interval']
             logger.debug('Recieved from API {}: {} {}'.format(
                 self.config['resource'][:-1], resource_item['id'],
                 resource_item['dateModified']))
@@ -114,6 +130,10 @@ class ResourceItemWorker(Greenlet):
             self.api_clients_queue.put(api_client_dict)
             return resource_item
         except InvalidResponse as e:
+            self.api_clients_info[api_client_dict['id']]['request_durations'][datetime.now()] =\
+                (datetime.now() - start_request).total_seconds()
+            self.api_clients_info[api_client_dict['id']]['request_interval'] =\
+                api_client_dict['request_interval']
             self.api_clients_queue.put(api_client_dict)
             logger.error('Error while getting {} {} from public with '
                          'status code: {}'.format(
@@ -127,6 +147,10 @@ class ResourceItemWorker(Greenlet):
             self.log_dict['exceptions_count'] += 1
             return None
         except RequestFailed as e:
+            self.api_clients_info[api_client_dict['id']]['request_durations'][datetime.now()] =\
+                (datetime.now() - start_request).total_seconds()
+            self.api_clients_info[api_client_dict['id']]['request_interval'] =\
+                api_client_dict['request_interval']
             if e.status_code == 429:
                 if (api_client_dict['request_interval'] >
                         self.config['drop_threshold_client_cookies']):
@@ -149,6 +173,10 @@ class ResourceItemWorker(Greenlet):
             self.log_dict['exceptions_count'] += 1
             return None  # request failed
         except ResourceNotFound as e:
+            self.api_clients_info[api_client_dict['id']]['request_durations'][datetime.now()] =\
+                (datetime.now() - start_request).total_seconds()
+            self.api_clients_info[api_client_dict['id']]['request_interval'] =\
+                api_client_dict['request_interval']
             logger.error('Resource not found {} at public: {} {}. {}'.format(
                 self.config['resource'][:-1], queue_resource_item['id'],
                 queue_resource_item['dateModified'], e.message))
@@ -159,10 +187,13 @@ class ResourceItemWorker(Greenlet):
                 'dateModified': queue_resource_item['dateModified']
             })
             self.log_dict['not_found_count'] += 1
-            self.log_dict['exceptions_count'] += 1
             self.api_clients_queue.put(api_client_dict)
             return None  # not found
         except Exception as e:
+            self.api_clients_info[api_client_dict['id']]['request_durations'][datetime.now()] =\
+                (datetime.now() - start_request).total_seconds()
+            self.api_clients_info[api_client_dict['id']]['request_interval'] =\
+                api_client_dict['request_interval']
             self.api_clients_queue.put(api_client_dict)
             logger.error('Error while getting resource item {} {} {} from'
                          ' public {}: '.format(
@@ -264,6 +295,7 @@ class ResourceItemWorker(Greenlet):
             # Try get api client from clients queue
             api_client_dict = self._get_api_client_dict()
             if api_client_dict is None:
+                logger.debug('API clients queue is empty.')
                 sleep(self.config['worker_sleep'])
                 continue
 
@@ -271,6 +303,7 @@ class ResourceItemWorker(Greenlet):
             queue_resource_item = self._get_resource_item_from_queue()
             if queue_resource_item is None:
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('Resource items queue is empty.')
                 sleep(self.config['worker_sleep'])
                 continue
 
