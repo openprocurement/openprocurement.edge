@@ -25,7 +25,7 @@ from openprocurement.edge.utils import (
 import gevent.pool
 from gevent import spawn, sleep
 from gevent.queue import Queue
-from datetime import datetime, timedelta
+from datetime import datetime
 from .workers import ResourceItemWorker
 from .utils import clear_api_client_queue
 
@@ -283,14 +283,15 @@ class EdgeDataBridge(object):
 
     def _get_average_requests_duration(self):
         req_durations = []
-        delta = timedelta(seconds=self.perfomance_window)
-        current_date = datetime.now() - delta
         for cid, info in self.api_clients_info.items():
-            if len(info['request_durations']) > 0:
-                if min(info['request_durations'].keys()) <= current_date:
-                    info['grown'] = True
-                avg = sum(info['request_durations'].values()) * 1.0 / len(info['request_durations'])
+            logger.debug('Request count {} client {}'.format(len(info['request_durations']), cid))
+            if len(info['request_durations']) > 100:
+                info['grown'] = True
+                avg = round(
+                    sum(info['request_durations'].values()) * 1.0 / len(info['request_durations']),
+                    3)
                 req_durations.append(avg)
+                logger.debug('Avg. request duration {} msec. client {}'.format(avg, cid))
                 info['avg_duration'] = avg
 
         if len(req_durations) > 0:
@@ -424,8 +425,9 @@ class EdgeDataBridge(object):
                 info['destroy'] = True
                 self.create_api_client()
                 logger.debug('Perfomance watcher: Mark client {} as bad, avg.'
-                             ' request_duration is {} sec.'.format(cid,
-                                                                   info['avg_duration']))
+                             ' request_duration is {} sec., stdev: {}'.format(cid,
+                                                                              info['avg_duration'],
+                                                                              dev))
             elif info['avg_duration'] < dev and info['request_interval'] > 0:
                 self.create_api_client()
                 info['destroy'] = True
@@ -436,20 +438,12 @@ class EdgeDataBridge(object):
     def perfomance_watcher(self):
             avg_duration, values = self._get_average_requests_duration()
             for _, info in self.api_clients_info.items():
-                delta = timedelta(seconds=self.perfomance_window + self.watch_interval)
-                current_date = datetime.now() - delta
-                delete_list = []
-                for key in info['request_durations']:
-                    if key < current_date:
-                        delete_list.append(key)
-                for k in delete_list:
-                    del info['request_durations'][k]
-                delete_list = []
+                info['request_durations'] = dict(info['request_durations'].items()[-100:])
 
             st_dev = self._calculate_st_dev(values)
             dev = round(st_dev + avg_duration, 3)
             logger.info('Perfomance watcher: Standart deviation for request_duration'
-                        ' is {} sec.'.format(round(st_dev, 4)))
+                        ' is {} sec. and stdev + avg. = {}'.format(round(st_dev, 3), dev))
             self.log_dict['request_dev'] = dev * 1000
 
             self._mark_bad_clients(dev)

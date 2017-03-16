@@ -407,14 +407,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
     def test__get_average_request_duration(self):
         bridge = EdgeDataBridge(self.config)
-        bridge.create_api_client()
-        bridge.create_api_client()
-        bridge.create_api_client()
+        for i in xrange(0, 3):
+            bridge.create_api_client()
         res, _ = bridge._get_average_requests_duration()
         self.assertEqual(res, 0)
         request_duration = 1
         for k in bridge.api_clients_info:
-            for i in xrange(0, 3):
+            for i in xrange(0, 101):
                 bridge.api_clients_info[k]['request_durations'][datetime.datetime.now()] =\
                     request_duration
             request_duration += 1
@@ -437,9 +436,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         for k in bridge.api_clients_info:
             if bridge.api_clients_info[k].get('grown', False):
                 grown += 1
-        self.assertEqual(res, 1.75)
-        self.assertEqual(len(res_list), 4)
-        self.assertEqual(grown, 1)
+        self.assertEqual(res, 2)
+        self.assertEqual(len(res_list), 3)
+        self.assertEqual(grown, 3)
 
     def test_bridge_stats(self):
         bridge = EdgeDataBridge(self.config)
@@ -479,7 +478,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         bridge.feeder.backward_info['status'] = 0
         bridge.api_clients_info['c1'] = {'request_durations': {datetime.datetime.now(): 1}}
         bridge.api_clients_info['c2'] = {'request_durations': {datetime.datetime.now(): 2}}
-
+        for x in xrange(0, 101):
+            bridge.api_clients_info['c1']['request_durations'][datetime.datetime.now()] = 2
+            bridge.api_clients_info['c2']['request_durations'][datetime.datetime.now()] = 5
         res = bridge.bridge_stats()
         self.assertEqual(res['sync_backward_last_response'], 0)
         self.assertNotEqual(res['max_avg_request_duration'], 0)
@@ -526,10 +527,11 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             bridge.create_api_client()
         req_duration = 1
         for _, info in bridge.api_clients_info.items():
-            info['request_durations'][datetime.datetime.now()] = req_duration
+            for i in xrange(0, 102):
+                info['request_durations'][datetime.datetime.now()] = req_duration
             req_duration += 1
             self.assertEqual(info.get('grown', False), False)
-            self.assertEqual(len(info['request_durations']), 1)
+            self.assertEqual(len(info['request_durations']), 102)
         self.assertEqual(len(bridge.api_clients_info), 3)
         self.assertEqual(bridge.api_clients_queue.qsize(), 3)
         sleep(1)
@@ -542,7 +544,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 grown += 1
             elif not info.get('grown', False) and not info['destroy']:
                 new_clients += 1
-            self.assertEqual(len(info['request_durations']), 0)
         self.assertEqual(len(bridge.api_clients_info), 3)
         self.assertEqual(bridge.api_clients_queue.qsize(), 3)
         self.assertEqual(grown, 2)
@@ -554,10 +555,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
     @patch('openprocurement.edge.databridge.EdgeDataBridge.gevent_watcher')
     def test_run(self, mock_fill, mock_controller, mock_perfomance, mock_gevent):
         bridge = EdgeDataBridge(self.config)
-        # bridge.fill_resource_items_queue = MagicMock()
-        # bridge.queues_controller = MagicMock()
-        # bridge.perfomance_watcher = MagicMock()
-        # bridge.gevent_watcher = MagicMock()
         self.assertEqual(len(bridge.filter_workers_pool), 0)
         with patch('__builtin__.True', AlmostAlwaysTrue(4)):
             bridge.run()

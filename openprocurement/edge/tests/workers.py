@@ -14,11 +14,11 @@ from openprocurement_client.exceptions import (
 )
 from openprocurement.edge.workers import ResourceItemWorker
 import logging
-import sys
 from StringIO import StringIO
 from openprocurement.edge.workers import logger
 
 logger.setLevel(logging.DEBUG)
+
 
 class TestResourceItemWorker(unittest.TestCase):
 
@@ -374,7 +374,6 @@ class TestResourceItemWorker(unittest.TestCase):
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
         del worker
-
 
     def test__save_bulk_docs(self):
         self.worker_config['bulk_save_limit'] = 3
