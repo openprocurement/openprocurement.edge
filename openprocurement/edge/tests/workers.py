@@ -3,8 +3,8 @@ import datetime
 import unittest
 import uuid
 from copy import deepcopy
-from gevent import sleep
-from gevent.queue import Queue
+from gevent import sleep, idle
+from gevent.queue import Queue, Empty
 from mock import MagicMock, patch
 from munch import munchify
 from openprocurement_client.exceptions import (
@@ -13,6 +13,11 @@ from openprocurement_client.exceptions import (
     ResourceNotFound as RNF
 )
 from openprocurement.edge.workers import ResourceItemWorker
+import logging
+from StringIO import StringIO
+from openprocurement.edge.workers import logger
+
+logger.setLevel(logging.DEBUG)
 
 
 class TestResourceItemWorker(unittest.TestCase):
@@ -121,18 +126,46 @@ class TestResourceItemWorker(unittest.TestCase):
     def test__get_api_client_dict(self):
         api_clients_queue = Queue()
         client = MagicMock()
-        client_dict = {'client': client, 'request_interval': 0}
+        client_dict = {
+            'id': uuid.uuid4().hex,
+            'client': client,
+            'request_interval': 0
+        }
+        client_dict2 = {
+            'id': uuid.uuid4().hex,
+            'client': client,
+            'request_interval': 0
+        }
         api_clients_queue.put(client_dict)
+        api_clients_queue.put(client_dict2)
+        api_clients_info = {
+            client_dict['id']: {
+                'destroy': False
+            },
+            client_dict2['id']: {
+                'destroy': True
+            }
+        }
 
         # Success test
         worker = ResourceItemWorker(api_clients_queue=api_clients_queue,
                                     config_dict=self.worker_config,
-                                    log_dict=self.log_dict)
-        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+                                    log_dict=self.log_dict, api_clients_info=api_clients_info)
+        self.assertEqual(worker.api_clients_queue.qsize(), 2)
         api_client = worker._get_api_client_dict()
         self.assertEqual(api_client, client_dict)
 
+        # Get lazy client
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(api_client, None)
+
         # Empty queue test
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(api_client, None)
+
+        # Get api_client with raise Empty exception
+        api_clients_queue.put(client_dict2)
+        api_clients_queue.get = MagicMock(side_effect=Empty)
         api_client = worker._get_api_client_dict()
         self.assertEqual(api_client, None)
         del worker
@@ -163,9 +196,13 @@ class TestResourceItemWorker(unittest.TestCase):
             'dateModified': datetime.datetime.utcnow().isoformat()
         }
         api_clients_queue = Queue()
-        api_clients_queue.put({
-            'client': mock_api_client,
-            'request_interval': 0.02})
+        client_dict = {
+            'id': uuid.uuid4().hex,
+            'request_interval': 0.02,
+            'client': mock_api_client
+        }
+        api_clients_queue.put(client_dict)
+        api_clients_info = {client_dict['id']: {'destroy': False, 'request_durations': {}}}
         retry_queue = Queue()
         return_dict = {
             'data': {
@@ -175,9 +212,9 @@ class TestResourceItemWorker(unittest.TestCase):
         }
         mock_api_client.get_resource_item.return_value = return_dict
         worker = ResourceItemWorker(api_clients_queue=api_clients_queue,
-                                    config_dict=self.worker_config,
+                                    config_dict=self.worker_config, log_dict=self.log_dict,
                                     retry_resource_items_queue=retry_queue,
-                                    log_dict=self.log_dict)
+                                    api_clients_info=api_clients_info)
 
         # Success test
         self.assertEqual(worker.api_clients_queue.qsize(), 1)
@@ -267,7 +304,7 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(public_item, None)
         self.assertEqual(worker.api_clients_queue.qsize(), 1)
         self.assertEqual(api_client['request_interval'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 5)
+        self.assertEqual(worker.log_dict['exceptions_count'], 4)
         self.assertEqual(worker.log_dict['add_to_retry'], 6)
         self.assertEqual(worker.log_dict['not_found_count'], 1)
         sleep(worker.config['retry_default_timeout'] * 2)
@@ -279,7 +316,7 @@ class TestResourceItemWorker(unittest.TestCase):
         public_item = worker._get_resource_item_from_public(api_client, item)
         self.assertEqual(public_item, None)
         self.assertEqual(api_client['request_interval'], 0)
-        self.assertEqual(worker.log_dict['exceptions_count'], 6)
+        self.assertEqual(worker.log_dict['exceptions_count'], 5)
         self.assertEqual(worker.log_dict['add_to_retry'], 7)
         sleep(worker.config['retry_default_timeout'] * 2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 7)
@@ -288,6 +325,7 @@ class TestResourceItemWorker(unittest.TestCase):
 
     def test__add_to_bulk(self):
         retry_queue = Queue()
+        old_date_modified = datetime.datetime.utcnow().isoformat()
         queue_resource_item = {
             'doc_type': 'Tender',
             'id': uuid.uuid4().hex,
@@ -309,12 +347,14 @@ class TestResourceItemWorker(unittest.TestCase):
                                     retry_resource_items_queue=retry_queue)
         worker.db = MagicMock()
 
+        # Successfull adding to bulk
         start_length = len(worker.bulk)
         worker._add_to_bulk(resource_item_dict, queue_resource_item,
                             resource_item_doc_dict)
         end_length = len(worker.bulk)
         self.assertGreater(end_length, start_length)
 
+        # Update exist doc in bulk
         start_length = len(worker.bulk)
         new_resource_item_dict = deepcopy(resource_item_dict)
         new_resource_item_dict['dateModified'] = datetime.datetime.utcnow().isoformat()
@@ -322,6 +362,18 @@ class TestResourceItemWorker(unittest.TestCase):
                             resource_item_doc_dict)
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
+
+        # Ignored dublicate in bulk
+        start_length = end_length
+        worker._add_to_bulk({
+            'doc_type': 'Tender',
+            'id': queue_resource_item['id'],
+            '_id': queue_resource_item['id'],
+            'dateModified': old_date_modified
+        }, queue_resource_item, resource_item_dict)
+        end_length = len(worker.bulk)
+        self.assertEqual(start_length, end_length)
+        del worker
 
     def test__save_bulk_docs(self):
         self.worker_config['bulk_save_limit'] = 3
@@ -382,3 +434,197 @@ class TestResourceItemWorker(unittest.TestCase):
         self.assertEqual(worker.exit, False)
         worker.shutdown()
         self.assertEqual(worker.exit, True)
+
+    def up_worker(self):
+        worker_thread = ResourceItemWorker.spawn(resource_items_queue=self.queue,
+                                                 retry_resource_items_queue=self.retry_queue,
+                                                 log_dict=self.log_dict,
+                                                 api_clients_info=self.api_clients_info,
+                                                 api_clients_queue=self.api_clients_queue,
+                                                 config_dict=self.worker_config, db=self.db)
+        idle()
+        worker_thread.shutdown()
+        sleep(3)
+
+    @patch('openprocurement.edge.workers.ResourceItemWorker._get_resource_item_from_public')
+    def test__run(self, mock_get_from_public):
+        self.queue = Queue()
+        self.retry_queue = Queue()
+        self.api_clients_queue = Queue()
+        queue_item = {
+            'id': uuid.uuid4().hex,
+            'dateModified': datetime.datetime.utcnow().isoformat()
+        }
+        doc = {
+            'id': queue_item['id'],
+            '_rev': '1-{}'.format(uuid.uuid4().hex),
+            'dateModified': datetime.datetime.utcnow().isoformat(),
+            'doc_type': 'Tender'
+        }
+        client = MagicMock()
+        api_client_dict = {
+            'id': uuid.uuid4().hex,
+            'client': client,
+            'request_interval': 0
+        }
+        client.session.headers = {'User-Agent': 'Test-Agent'}
+        # api_clients_queue.put(api_client_dict)
+        self.api_clients_info = {api_client_dict['id']: {'destroy': False, 'request_durations': []}}
+        self.db = MagicMock()
+
+        # Try get api client from clients queue
+        log_capture_string = StringIO()
+        ch = logging.StreamHandler(log_capture_string)
+        ch.setLevel(logging.DEBUG)
+        logger.addHandler(ch)
+        self.assertEqual(self.queue.qsize(), 0)
+        self.up_worker()
+        self.assertEqual(self.queue.qsize(), 0)
+        log_strings = log_capture_string.getvalue().split('\n')
+        self.assertEqual(log_strings[0], 'API clients queue is empty.')
+        self.assertEqual(log_strings[1], 'Worker complete his job.')
+
+        # Try get item from resource items queue
+        self.api_clients_queue.put(api_client_dict)
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[2:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(log_strings[1], 'Resource items queue is empty.')
+        self.assertEqual(log_strings[2], 'Worker complete his job.')
+
+        # Try get resource item from local storage
+        self.queue.put(queue_item)
+        mock_get_from_public.return_value = doc
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[5:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(
+            log_strings[1],
+            'Get tender {} {} from main queue.'.format(doc['id'], queue_item['dateModified']))
+        self.assertEqual('Put in bulk tender {} {}'.format(doc['id'], doc['dateModified']),
+                         log_strings[2])
+        self.assertEqual('API clients queue is empty.', log_strings[3])
+        self.assertEqual('Worker complete his job.', log_strings[4])
+
+        # queue_resource_item dateModified is None and None public doc
+        self.api_clients_queue.put(api_client_dict)
+        self.queue.put({'id': doc['id'], 'dateModified': None})
+        mock_get_from_public.return_value = None
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[10:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(log_strings[1], 'Get tender {} None from main queue.'.format(doc['id']))
+        self.assertEqual('API clients queue is empty.', log_strings[2])
+        self.assertEqual('Worker complete his job.', log_strings[3])
+
+        # queue_resource_item dateModified is None and not None public doc
+        self.api_clients_queue.put(api_client_dict)
+        self.queue.put({'id': doc['id'], 'dateModified': None})
+        mock_get_from_public.return_value = doc
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[14:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(log_strings[1], 'Get tender {} None from main queue.'.format(doc['id']))
+        self.assertEqual(log_strings[2], 'Put tender {} to \'retries_queue\''.format(doc['id']))
+        self.assertEqual('API clients queue is empty.', log_strings[3])
+        self.assertEqual('Worker complete his job.', log_strings[4])
+
+        # Skip doc
+        self.api_clients_queue.put(api_client_dict)
+        self.api_clients_queue.put(api_client_dict)
+        self.queue.put({'id': doc['id'], 'dateModified': None})
+        mock_get_from_public.return_value = doc
+        self.db.get.return_value = doc
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[19:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(log_strings[1], 'Get tender {} None from main queue.'.format(doc['id']))
+        self.assertEqual(log_strings[2],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual('Ignored tender {} QUEUE - {}, EDGE - {}'.format(
+            doc['id'], doc['dateModified'], doc['dateModified']), log_strings[3])
+        self.assertEqual(log_strings[4],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual('Resource items queue is empty.', log_strings[5])
+        self.assertEqual('Worker complete his job.', log_strings[6])
+
+        # Skip doc with raise exception
+        self.api_clients_queue.put(api_client_dict)
+        self.api_clients_queue.put(api_client_dict)
+        self.queue.put({'id': doc['id'], 'dateModified': None})
+        mock_get_from_public.side_effect = Exception('test')
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[26:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(log_strings[1], 'Get tender {} None from main queue.'.format(doc['id']))
+        self.assertEqual(log_strings[2], 'Put tender {} to \'retries_queue\''.format(doc['id']))
+        self.assertEqual('Error while getting resource item from couchdb: test', log_strings[3])
+        self.assertEqual(log_strings[4],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual('Resource items queue is empty.', log_strings[5])
+        self.assertEqual('Worker complete his job.', log_strings[6])
+
+        # Try get resource item from public server with None public doc
+        new_date_modified = datetime.datetime.utcnow().isoformat()
+        self.queue.put({'id': doc['id'], 'dateModified': new_date_modified})
+        mock_get_from_public.return_value = None
+        mock_get_from_public.side_effect = None
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[33:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(
+            log_strings[1],
+            'Get tender {} {} from main queue.'.format(doc['id'], new_date_modified))
+        self.assertEqual(log_strings[2],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual('Resource items queue is empty.', log_strings[3])
+        self.assertEqual('Worker complete his job.', log_strings[4])
+
+        # Try get resource item from public server
+        new_date_modified = datetime.datetime.utcnow().isoformat()
+        self.queue.put({'id': doc['id'], 'dateModified': new_date_modified})
+        mock_get_from_public.return_value = doc
+        mock_get_from_public.side_effect = None
+        self.up_worker()
+        log_strings = log_capture_string.getvalue().split('\n')[38:]
+        self.assertEqual(log_strings[0],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual(
+            log_strings[1],
+            'Get tender {} {} from main queue.'.format(doc['id'], new_date_modified))
+        self.assertEqual('Put in bulk tender {} {}'.format(doc['id'], doc['dateModified']),
+                         log_strings[2])
+        self.assertEqual(log_strings[3],
+                         'Got api_client ID: {} {}'.format(api_client_dict['id'],
+                                                           client.session.headers['User-Agent']))
+        self.assertEqual('Resource items queue is empty.', log_strings[4])
+        self.assertEqual('Worker complete his job.', log_strings[5])
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestResourceItemWorker))
+    return suite
+
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

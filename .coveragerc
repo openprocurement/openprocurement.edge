@@ -10,4 +10,9 @@ exclude_lines =
     if 'test' not in __import__('sys').argv[0]:
         import gevent.monkey
         gevent.monkey.patch_all()
+    try:
+        import urllib3.contrib.pyopenssl
+        urllib3.contrib.pyopenssl.inject_into_urllib3()
+    except ImportError:
+        pass
 show_missing = True

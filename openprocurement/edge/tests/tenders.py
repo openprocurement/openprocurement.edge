@@ -72,6 +72,17 @@ class TenderResourceTest(TenderBaseWebTest):
         self.assertNotIn('descending=1', response.json['prev_page']['uri'])
         self.assertIn('limit=10', response.json['prev_page']['uri'])
 
+        self.app.app.registry.update_after = False
+        response = self.app.get('/tenders')
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data'], [])
+        self.assertNotIn('{\n    "', response.body)
+        self.assertNotIn('callback({', response.body)
+        self.assertEqual(response.json['next_page']['offset'], '')
+        self.assertNotIn('prev_page', response.json)
+        self.app.app.registry.update_after = True
+
     def test_listing(self):
         response = self.app.get('/tenders')
         self.assertEqual(response.status, '200 OK')

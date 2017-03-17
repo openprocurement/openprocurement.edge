@@ -5,9 +5,12 @@ import datetime
 import os
 import logging
 import uuid
+from gevent import sleep
+from gevent.queue import Queue
 from couchdb import Server
 from mock import MagicMock, patch
 from munch import munchify
+from httplib import IncompleteRead
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement.edge.tests.base import TenderBaseWebTest
 from openprocurement.edge.databridge import EdgeDataBridge
@@ -23,6 +26,19 @@ logger = logging.getLogger()
 logger.level = logging.DEBUG
 
 
+class AlmostAlwaysTrue(object):
+
+    def __init__(self, total_iterations=1):
+        self.total_iterations = total_iterations
+        self.current_iteration = 0
+
+    def __nonzero__(self):
+        if self.current_iteration < self.total_iterations:
+            self.current_iteration += 1
+            return bool(1)
+        return bool(0)
+
+
 class TestEdgeDataBridge(TenderBaseWebTest):
     config = {
         'main': {
@@ -33,18 +49,21 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'db_name': 'test_db',
             'queue_size': 101,
             'api_clients_count': 3,
-            'workers_count': 3,
+            'workers_min': 0,
+            'workers_max': 2,
             'retry_workers_count': 2,
             'filter_workers_count': 1,
             'retry_workers_count': 2,
             'retry_default_timeout': 5,
             'worker_sleep': 5,
-            'watch_interval': 10,
+            'watch_interval': 0.1,
             'queue_timeout': 5,
             'resource_items_queue_size': -1,
             'retry_resource_items_queue_size': -1,
             'bulk_query_limit': 1,
             'retrieve_mode': '_all_',
+            'perfomance_window': 0.1,
+            'queues_controller_timeout': 0.01,
             'retrievers_params': {
                 'down_requests_sleep': 5,
                 'up_requests_sleep': 1,
@@ -113,6 +132,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertIn('couch_url', bridge.config['main'])
         self.assertIn('db_name', bridge.config['main'])
         self.assertEqual(self.config['main']['couch_url'], bridge.couch_url)
+        self.assertEqual(len(bridge.server.uuids()[0]), 32)
 
         del bridge
         self.config['main']['resource_items_queue_size'] = 101
@@ -235,7 +255,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.api_clients_queue.qsize(),
                          bridge.workers_min)
 
-    @patch('openprocurement.edge.databridge.get_resource_items')
+    @patch('openprocurement.edge.databridge.ResourceFeeder.get_resource_items')
     def test_fill_resource_items_queue(self, mock_get_resource_items):
         bridge = EdgeDataBridge(self.config)
         db_dict_list = [
@@ -264,11 +284,23 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.log_dict['add_to_resource_items_queue'], 1)
         self.assertEqual(bridge.log_dict['skiped'], 1)
 
+        bridge.db.view = MagicMock(side_effect=IncompleteRead('test'))
+        with self.assertRaises(IncompleteRead) as e:
+            bridge.fill_resource_items_queue()
+        self.assertEqual(e.exception.args[0], 'test')
+
     @patch('openprocurement.edge.databridge.spawn')
     @patch('openprocurement.edge.databridge.ResourceItemWorker.spawn')
     @patch('openprocurement.edge.databridge.APIClient')
     def test_gevent_watcher(self, mock_APIClient, mock_riw_spawn, mock_spawn):
         bridge = EdgeDataBridge(self.config)
+        return_dict = {
+            'type': 'indexer',
+            'database': bridge.db_name,
+            'design_document': '_design/{}'.format(bridge.workers_config['resource']),
+            'progress': 99
+        }
+        bridge.server.tasks = MagicMock(return_value=[return_dict])
         self.assertEqual(bridge.filter_workers_pool.free_count(),
                          bridge.filter_workers_count)
         self.assertEqual(bridge.workers_pool.free_count(),
@@ -282,6 +314,29 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.retry_workers_pool.free_count(),
                          bridge.retry_workers_max - bridge.retry_workers_min)
         del bridge
+
+    @patch('openprocurement.edge.databridge.APIClient')
+    @patch('openprocurement.edge.databridge.ResourceItemWorker.spawn')
+    def test_queues_controller(self, mock_riw_spawn, mock_APIClient):
+        bridge = EdgeDataBridge(self.config)
+        bridge.resource_items_queue_size = 10
+        bridge.resource_items_queue = Queue(10)
+        for i in xrange(0, 10):
+            bridge.resource_items_queue.put('a')
+        self.assertEqual(len(bridge.workers_pool), 0)
+        self.assertEqual(bridge.resource_items_queue.qsize(), 10)
+        with patch('__builtin__.True', AlmostAlwaysTrue()):
+            bridge.queues_controller()
+        self.assertEqual(len(bridge.workers_pool), 1)
+        bridge.workers_pool.add(mock_riw_spawn)
+        self.assertEqual(len(bridge.workers_pool), 2)
+
+        for i in xrange(0, 10):
+            bridge.resource_items_queue.get()
+        with patch('__builtin__.True', AlmostAlwaysTrue()):
+            bridge.queues_controller()
+        self.assertEqual(len(bridge.workers_pool), 1)
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
 
     @patch('openprocurement.edge.databridge.APIClient')
     def test_create_api_client(self, mock_APIClient):
@@ -349,6 +404,164 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         del bridge.config['main']
         with self.assertRaises(DataBridgeConfigError):
             bridge.config_get('couch_url')
+
+    def test__get_average_request_duration(self):
+        bridge = EdgeDataBridge(self.config)
+        for i in xrange(0, 3):
+            bridge.create_api_client()
+        res, _ = bridge._get_average_requests_duration()
+        self.assertEqual(res, 0)
+        request_duration = 1
+        for k in bridge.api_clients_info:
+            for i in xrange(0, 101):
+                bridge.api_clients_info[k]['request_durations'][datetime.datetime.now()] =\
+                    request_duration
+            request_duration += 1
+        res, res_list = bridge._get_average_requests_duration()
+        self.assertEqual(res, 2)
+        self.assertEqual(len(res_list), 3)
+
+        delta = datetime.timedelta(seconds=301)
+        grown_date = datetime.datetime.now() - delta
+        bridge.api_clients_info[uuid.uuid4().hex] = {
+            'request_durations': {grown_date: 1},
+            'destroy': False,
+            'request_interval': 0,
+            'avg_duration': 0
+        }
+        self.assertEqual(len(bridge.api_clients_info), 4)
+
+        res, res_list = bridge._get_average_requests_duration()
+        grown = 0
+        for k in bridge.api_clients_info:
+            if bridge.api_clients_info[k].get('grown', False):
+                grown += 1
+        self.assertEqual(res, 2)
+        self.assertEqual(len(res_list), 3)
+        self.assertEqual(grown, 3)
+
+    def test_bridge_stats(self):
+        bridge = EdgeDataBridge(self.config)
+        bridge.feeder = MagicMock()
+        bridge.feeder.queue.qsize.return_value = 44
+        bridge.feeder.backward_info = {
+            'last_response': datetime.datetime.now(),
+            'status': 1,
+            'resource_item_count': 13
+        }
+        bridge.feeder.forward_info = {
+            'last_response': datetime.datetime.now(),
+            'resource_item_count': 31
+        }
+        sleep(1)
+        res = bridge.bridge_stats()
+        keys = ['resource_items_queue_size', 'retry_resource_items_queue_size', 'workers_count',
+                'api_clients_count', 'avg_request_duration', 'filter_workers_count',
+                'retry_workers_count', 'min_avg_request_duration', 'max_avg_request_duration']
+        for k, v in bridge.log_dict.items():
+            self.assertEqual(res[k], v)
+        for k in keys:
+            self.assertEqual(res[k], 0)
+        self.assertEqual(res['sync_backward_response_len'],
+                         bridge.feeder.backward_info['resource_item_count'])
+        self.assertEqual(res['sync_forward_response_len'],
+                         bridge.feeder.forward_info['resource_item_count'])
+        self.assertGreater(res['vms'], 0)
+        self.assertGreater(res['rss'], 0)
+        self.assertGreater(res['sync_backward_last_response'], 0)
+        self.assertGreater(res['sync_forward_last_response'], 0)
+        self.assertEqual(res['sync_queue'], 44)
+        self.assertEqual(res['resource'], bridge.workers_config['resource'])
+        self.assertEqual(res['_id'], bridge.workers_config['resource'])
+        self.assertNotEqual(res['time'], '')
+
+        bridge.feeder.backward_info['status'] = 0
+        bridge.api_clients_info['c1'] = {'request_durations': {datetime.datetime.now(): 1}}
+        bridge.api_clients_info['c2'] = {'request_durations': {datetime.datetime.now(): 2}}
+        for x in xrange(0, 101):
+            bridge.api_clients_info['c1']['request_durations'][datetime.datetime.now()] = 2
+            bridge.api_clients_info['c2']['request_durations'][datetime.datetime.now()] = 5
+        res = bridge.bridge_stats()
+        self.assertEqual(res['sync_backward_last_response'], 0)
+        self.assertNotEqual(res['max_avg_request_duration'], 0)
+        self.assertNotEqual(res['min_avg_request_duration'], 0)
+
+    def test__calculate_st_dev(self):
+        bridge = EdgeDataBridge(self.config)
+        values = [1.1, 1.11, 1.12, 1.13, 1.14]
+        stdev = bridge._calculate_st_dev(values)
+        self.assertEqual(stdev, 0.014)
+        stdev = bridge._calculate_st_dev([])
+        self.assertEqual(stdev, 0)
+
+    def test__mark_bad_clients(self):
+        bridge = EdgeDataBridge(self.config)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 0)
+        self.assertEqual(len(bridge.api_clients_info), 0)
+
+        bridge.create_api_client()
+        bridge.create_api_client()
+        bridge.create_api_client()
+        self.assertEqual(len(bridge.api_clients_info), 3)
+        avg_duration = 1
+        req_intervals = [0, 2, 0, 0]
+        for cid in bridge.api_clients_info:
+            self.assertEqual(bridge.api_clients_info[cid]['destroy'], False)
+            bridge.api_clients_info[cid]['avg_duration'] = avg_duration
+            bridge.api_clients_info[cid]['grown'] = True
+            bridge.api_clients_info[cid]['request_interval'] = req_intervals[avg_duration]
+            avg_duration += 1
+        avg = 1.5
+        bridge._mark_bad_clients(avg)
+        self.assertEqual(len(bridge.api_clients_info), 6)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 6)
+        to_destroy = 0
+        for cid in bridge.api_clients_info:
+            if bridge.api_clients_info[cid]['destroy']:
+                to_destroy += 1
+        self.assertEqual(to_destroy, 3)
+
+    def test_perfomance_watcher(self):
+        bridge = EdgeDataBridge(self.config)
+        for i in xrange(0, 3):
+            bridge.create_api_client()
+        req_duration = 1
+        for _, info in bridge.api_clients_info.items():
+            for i in xrange(0, 102):
+                info['request_durations'][datetime.datetime.now()] = req_duration
+            req_duration += 1
+            self.assertEqual(info.get('grown', False), False)
+            self.assertEqual(len(info['request_durations']), 102)
+        self.assertEqual(len(bridge.api_clients_info), 3)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 3)
+        sleep(1)
+
+        bridge.perfomance_watcher()
+        grown = 0
+        new_clients = 0
+        for cid, info in bridge.api_clients_info.items():
+            if info.get('grown', False):
+                grown += 1
+            elif not info.get('grown', False) and not info['destroy']:
+                new_clients += 1
+        self.assertEqual(len(bridge.api_clients_info), 3)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 3)
+        self.assertEqual(grown, 2)
+        self.assertEqual(new_clients, 1)
+
+    @patch('openprocurement.edge.databridge.EdgeDataBridge.fill_resource_items_queue')
+    @patch('openprocurement.edge.databridge.EdgeDataBridge.queues_controller')
+    @patch('openprocurement.edge.databridge.EdgeDataBridge.perfomance_watcher')
+    @patch('openprocurement.edge.databridge.EdgeDataBridge.gevent_watcher')
+    def test_run(self, mock_fill, mock_controller, mock_perfomance, mock_gevent):
+        bridge = EdgeDataBridge(self.config)
+        self.assertEqual(len(bridge.filter_workers_pool), 0)
+        with patch('__builtin__.True', AlmostAlwaysTrue(4)):
+            bridge.run()
+        self.assertEqual(mock_fill.call_count, 1)
+        self.assertEqual(mock_controller.call_count, 1)
+        self.assertEqual(mock_perfomance.call_count, 1)
+        self.assertEqual(mock_gevent.call_count, 1)
 
 
 def suite():
