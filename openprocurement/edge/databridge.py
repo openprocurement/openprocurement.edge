@@ -24,7 +24,7 @@ from openprocurement.edge.utils import (
 )
 import gevent.pool
 from gevent import spawn, sleep
-from gevent.queue import Queue
+from gevent.queue import Queue, Empty
 from datetime import datetime, timedelta
 from .workers import ResourceItemWorker
 from .utils import clear_api_client_queue
@@ -66,6 +66,7 @@ DEFAULTS = {
     'user_agent': 'edge.multi',
     'log_db_name': 'logs_db',
     'resource_items_queue_size': 10000,
+    'input_queue_size': 10000,
     'resource_items_limit': 1000,
     'queues_controller_timeout': 60,
     'filter_workers_pool': 1,
@@ -113,6 +114,10 @@ class EdgeDataBridge(object):
         self.filter_workers_pool = gevent.pool.Pool(self.filter_workers_count)
 
         # Queues
+        if self.input_queue_size == -1:
+            self.input_queue = Queue()
+        else:
+            self.input_queue = Queue(self.input_queue_size)
         if self.resource_items_queue_size == -1:
             self.resource_items_queue = Queue()
         else:
@@ -185,8 +190,13 @@ class EdgeDataBridge(object):
                                        api_version=self.api_version,
                                        key='',
                                        resource=self.workers_config['resource'])
+                client_id = uuid.uuid4().hex
+                logger.info('Started api_client {}'.format(
+                    api_client.session.headers['User-Agent']),
+                    extra={'MESSAGE_ID': 'create_api_clients',
+                           'type': 'counter'})
                 api_client_dict = {
-                    'id': uuid.uuid4().hex,
+                    'id': client_id,
                     'client': api_client,
                     'request_interval': 0,
                     'not_actual_count': 0
@@ -198,65 +208,96 @@ class EdgeDataBridge(object):
                     'avg_duration': 0
                 }
                 self.api_clients_queue.put(api_client_dict)
-                logger.info('Started api_client {}'.format(
-                    api_client.session.headers['User-Agent']))
                 break
             except RequestFailed as e:
                 self.log_dict['exceptions_count'] += 1
                 logger.error(
                     'Failed start api_client with status code {}'.format(
-                        e.status_code))
+                        e.status_code),
+                    extra={'MESSAGE_ID': 'exceptions', 'type': 'counter'})
                 timeout = timeout * 2
+                logger.info('create_api_client will be sleep {} sec.'.format(timeout))
+                sleep(timeout)
+            except Exception as e:
+                self.log_dict['exceptions_count'] += 1
+                logger.error(
+                    'Failed start api client with error: {}'.format(e.message),
+                    extra={'MESSAGE_ID': 'exceptions', 'type': 'counter'})
+                timeout = timeout * 2
+                logger.info('create_api_client will be sleep {} sec.'.format(timeout))
                 sleep(timeout)
 
     def fill_api_clients_queue(self):
         while self.api_clients_queue.qsize() < self.workers_min:
             self.create_api_client()
 
+    def fill_input_queue(self):
+        for resource_item in self.feeder.get_resource_items():
+            self.input_queue.put(resource_item)
+            logger.debug('Add to temp queue from sync: {} {} {}'.format(
+                self.workers_config['resource'][:-1], resource_item['id'],
+                resource_item['dateModified']),
+                extra={'MESSAGE_ID': 'received_from_sync', 'type': 'counter'})
+
+    def send_bulk(self, input_dict):
+        sleep_before_retry = 2
+        for i in xrange(0, 3):
+            try:
+                rows = self.db.view(self.view_path, keys=input_dict.values())
+                resp_dict = {k.id: k.key for k in rows}
+                break
+            except (IncompleteRead, Exception) as e:
+                logger.error('Error while send bulk {}'.format(e.message))
+                if i == 2:
+                    raise e
+                sleep(sleep_before_retry)
+                sleep_before_retry *= 2
+        for item_id, date_modified in input_dict.items():
+            if item_id in resp_dict and date_modified == resp_dict[item_id]:
+                self.log_dict['skiped'] += 1
+                logger.debug('Ignored {} {}: SYNC - {}, EDGE - {}'.format(
+                    self.workers_config['resource'][:-1], item_id,
+                    date_modified, resp_dict[item_id]),
+                    extra={'MESSAGE_ID': 'skiped', 'type': 'counter'})
+            else:
+                self.resource_items_queue.put({
+                    'id': item_id,
+                    'dateModified': date_modified
+                })
+                logger.debug('Put to main queue {}: {} {}'.format(
+                    self.workers_config['resource'][:-1], item_id,
+                    date_modified),
+                    extra={'MESSAGE_ID': 'add_to_resource_items_queue',
+                           'type': 'counter'})
+                self.log_dict['add_to_resource_items_queue'] += 1
+        input_dict = {}
+
     def fill_resource_items_queue(self):
         start_time = datetime.now()
         input_dict = {}
-        for resource_item in self.feeder.get_resource_items():
-            input_dict[resource_item['id']] = resource_item['dateModified']
-            logger.debug('Recieved from sync {}: {} {}'.format(
-                self.workers_config['resource'][:-1], resource_item['id'],
-                resource_item['dateModified']
-            ))
-            if (len(input_dict) > self.bulk_query_limit or
-                    (datetime.now() - start_time).total_seconds() > self.bulk_query_interval):
-                retry_count = 0
-                sleep_before_retry = 2
-                while True:
-                    try:
-                        rows = self.db.view(self.view_path, keys=input_dict.values())
-                        resp_dict = {k.id: k.key for k in rows}
-                        break
-                    except IncompleteRead as e:
-                        if retry_count > 3:
-                            raise e
-                        logger.error('IncompleteRead: {}'.format(e.message))
-                        logger.info('Fill thread sleep {} sec.'.format(sleep_before_retry))
-                        sleep(sleep_before_retry)
-                        sleep_before_retry *= 2
-                        retry_count += 1
-                        continue
-                for item_id, date_modified in input_dict.items():
-                    if item_id in resp_dict and date_modified == resp_dict[item_id]:
-                        self.log_dict['skiped'] += 1
-                        logger.debug('Ignored {} {}: SYNC - {}, EDGE - {}'.format(
-                            self.workers_config['resource'][:-1], item_id,
-                            date_modified, resp_dict[item_id]))
-                    else:
-                        self.resource_items_queue.put({
-                            'id': item_id,
-                            'dateModified': date_modified
-                        })
-                        logger.debug('Put to main queue {}: {} {}'.format(
-                            self.workers_config['resource'][:-1], item_id,
-                            date_modified
-                        ))
-                        self.log_dict['add_to_resource_items_queue'] += 1
-                input_dict = {}
+        while True:
+            # Get resource_item from temp queue
+            if not self.input_queue.empty():
+                resource_item = self.input_queue.get()
+            else:
+                timeout = self.bulk_query_interval -\
+                    (datetime.now() - start_time).total_seconds()
+                if timeout > self.bulk_query_interval:
+                    timeout = self.bulk_query_interval
+                try:
+                    resource_item = self.input_queue.get(timeout=timeout)
+                except Empty:
+                    resource_item = None
+
+            # Add resource_item to bulk
+            if resource_item is not None:
+                input_dict[resource_item['id']] = resource_item['dateModified']
+
+            if (len(input_dict) >= self.bulk_query_limit or
+                (datetime.now() - start_time).total_seconds() >=
+                    self.bulk_query_interval):
+                if len(input_dict) > 0:
+                    self.send_bulk(input_dict)
                 start_time = datetime.now()
 
     def resource_items_filter(self, r_id, r_date_modified):
@@ -270,9 +311,11 @@ class EdgeDataBridge(object):
             else:
                 return True
         except Exception as e:
-            logger.error('Filter error: Error while getting {} {} from'
-                         ' couchdb: {}'.format(self.workers_config['resource'][:-1],
-                                               r_id, e.message))
+            logger.error(
+                'Filter error: Error while getting {} {} from couchdb: '
+                '{}'.format(
+                    self.workers_config['resource'][:-1], r_id, e.message),
+                extra={'MESSAGE_ID': 'exceptions', 'type': 'counter'})
             return True
 
     def reset_log_counters(self):
@@ -325,8 +368,10 @@ class EdgeDataBridge(object):
         stats_dict['resource_items_queue_size'] = self.resource_items_queue.qsize()
         stats_dict['retry_resource_items_queue_size'] = self.retry_resource_items_queue.qsize()
         stats_dict['workers_count'] = self.workers_max - self.workers_pool.free_count()
-        stats_dict['filter_workers_count'] =\
-            self.filter_workers_count - self.filter_workers_pool.free_count()
+        if self.filler.exception:
+            stats_dict['filter_workers_count'] = 0
+        else:
+            stats_dict['filter_workers_count'] = 1
         stats_dict['retry_workers_count'] =\
             self.retry_workers_max - self.retry_workers_pool.free_count()
         stats_dict['api_clients_count'] = len(self.api_clients_info)
@@ -385,9 +430,22 @@ class EdgeDataBridge(object):
 
         spawn(self.logger.save, self.bridge_stats())
         self.reset_log_counters()
-        for i in xrange(0, self.filter_workers_pool.free_count()):
-            self.filter_workers_pool.spawn(self.fill_resource_items_queue)
-            logger.info('Watcher: Create fill queue worker.')
+        # for i in xrange(0, self.filter_workers_pool.free_count()):
+        #     self.filter_workers_pool.spawn(self.fill_resource_items_queue)
+        #     logger.info('Watcher: Create fill queue worker.')
+
+        # Check fill threads
+        if self.input_queue_filler.exception:
+            logger.error('Temp queue filler error: {}'.format(
+                self.input_queue_filler.exception.message),
+                extra={'MESSAGE_ID': 'exception', 'type': 'counter'})
+            self.input_queue_filler = spawn(self.fill_input_queue)
+        if self.filler.exception:
+            logger.error('Fill thread error: {}'.format(
+                self.filler.exception.message),
+                extra={'MESSAGE_ID': 'exception', 'type': 'counter'})
+            self.filler = spawn(self.fill_resource_items_queue)
+
         if len(self.workers_pool) < self.workers_min:
             for i in xrange(0, (self.workers_min - len(self.workers_pool))):
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
@@ -426,19 +484,20 @@ class EdgeDataBridge(object):
                 info['destroy'] = True
                 self.create_api_client()
                 logger.debug('Perfomance watcher: Mark client {} as bad, avg.'
-                             ' request_duration is {} sec.'.format(cid,
-                                                                   info['avg_duration']))
+                             ' request_duration is {} sec.'.format(
+                                 cid, info['avg_duration']))
             elif info['avg_duration'] < dev and info['request_interval'] > 0:
                 self.create_api_client()
                 info['destroy'] = True
                 logger.debug('Perfomance watcher: Mark client {} as bad,'
-                             ' request_interval is {} sec.'.format(cid,
-                                                                   info['request_interval']))
+                             ' request_interval is {} sec.'.format(
+                                 cid, info['request_interval']))
 
     def perfomance_watcher(self):
             avg_duration, values = self._get_average_requests_duration()
             for _, info in self.api_clients_info.items():
-                delta = timedelta(seconds=self.perfomance_window + self.watch_interval)
+                delta = timedelta(
+                    seconds=self.perfomance_window + self.watch_interval)
                 current_date = datetime.now() - delta
                 delete_list = []
                 for key in info['request_durations']:
@@ -450,20 +509,21 @@ class EdgeDataBridge(object):
 
             st_dev = self._calculate_st_dev(values)
             dev = round(st_dev + avg_duration, 3)
-            logger.info('Perfomance watcher: Standart deviation for request_duration'
-                        ' is {} sec.'.format(round(st_dev, 3)))
+            logger.info('Perfomance watcher: Standart deviation for '
+                        'request_duration is {} sec.'.format(round(st_dev, 3)))
             self.log_dict['request_dev'] = dev * 1000
 
             self._mark_bad_clients(dev)
-            clear_api_client_queue(self.api_clients_queue, self.api_clients_info)
+            clear_api_client_queue(self.api_clients_queue,
+                                   self.api_clients_info)
 
     def run(self):
         logger.info('Start Edge Bridge',
                     extra={'MESSAGE_ID': 'edge_bridge_start_bridge'})
         logger.info('Start data sync...',
                     extra={'MESSAGE_ID': 'edge_bridge__data_sync'})
-        # self.fill_api_clients_queue()
-        self.filter_workers_pool.spawn(self.fill_resource_items_queue)
+        self.input_queue_filler = spawn(self.fill_input_queue)
+        self.filler = spawn(self.fill_resource_items_queue)
         spawn(self.queues_controller)
         while True:
             self.gevent_watcher()
