@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-import unittest
+from gevent import monkey
+monkey.patch_all()
 
+import unittest
 import datetime
 import os
 import logging
@@ -54,13 +56,14 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'retry_workers_count': 2,
             'filter_workers_count': 1,
             'retry_workers_count': 2,
-            'retry_default_timeout': 5,
-            'worker_sleep': 5,
+            'retry_default_timeout': 0.1,
+            'worker_sleep': 0.1,
             'watch_interval': 0.1,
-            'queue_timeout': 5,
+            'queue_timeout': 0.1,
             'resource_items_queue_size': -1,
             'retry_resource_items_queue_size': -1,
             'bulk_query_limit': 1,
+            'bulk_query_interval': 0.5,
             'retrieve_mode': '_all_',
             'perfomance_window': 0.1,
             'queues_controller_timeout': 0.01,
@@ -112,12 +115,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.config['filter_workers_count'] = 1
         self.config['retry_workers_count'] = 2
         self.config['retry_default_timeout'] = 5
-        self.config['worker_sleep'] = 5
-        self.config['watch_interval'] = 10
-        self.config['queue_timeout'] = 5
+        self.config['worker_sleep'] = 0.1
+        self.config['watch_interval'] = 0.5
+        self.config['queue_timeout'] = 0.1
         self.config['resource_items_queue_size'] = -1
         self.config['retry_resource_items_queue_size'] = -1
         self.config['bulk_query_limit'] = 1
+        self.config['bulk_query_interval'] = 0.5
         try:
             server = Server(self.config['main'].get('couch_url') or 'http://127.0.0.1:5984')
             del server[self.config['main']['db_name']]
@@ -255,8 +259,42 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.api_clients_queue.qsize(),
                          bridge.workers_min)
 
-    @patch('openprocurement.edge.databridge.ResourceFeeder.get_resource_items')
-    def test_fill_resource_items_queue(self, mock_get_resource_items):
+    def test_fill_input_queue(self):
+        bridge = EdgeDataBridge(self.config)
+        return_value = [
+            {'id': uuid.uuid4().hex,
+             'dateModified': datetime.datetime.utcnow().isoformat()}
+        ]
+        bridge.feeder.get_resource_items = MagicMock(return_value=return_value)
+        self.assertEqual(bridge.input_queue.qsize(), 0)
+        bridge.fill_input_queue()
+        self.assertEqual(bridge.input_queue.qsize(), 1)
+        self.assertEqual(bridge.input_queue.get(), return_value[0])
+
+    def test_send_bulk(self):
+        old_date_modified = datetime.datetime.utcnow().isoformat()
+        id_1 = uuid.uuid4().hex
+        date_modified_1 = datetime.datetime.utcnow().isoformat()
+        id_2 = uuid.uuid4().hex
+        date_modified_2 = datetime.datetime.utcnow().isoformat()
+        input_dict = {id_1: date_modified_1, id_2: date_modified_2}
+        return_value = [
+            munchify({'id': id_1, 'key': date_modified_1}),
+            munchify({'id': id_2, 'key': old_date_modified})
+        ]
+        bridge = EdgeDataBridge(self.config)
+        bridge.db.view = MagicMock(return_value=return_value)
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
+        bridge.send_bulk(input_dict)
+        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
+        bridge.db.view.side_effect = [Exception(), Exception(),
+                                      Exception('test')]
+        input_dict = {}
+        with self.assertRaises(Exception) as e:
+            bridge.send_bulk(input_dict)
+        self.assertEqual(e.exception.message, 'test')
+
+    def test_fill_resource_items_queue(self):
         bridge = EdgeDataBridge(self.config)
         db_dict_list = [
             {
@@ -267,11 +305,15 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'id': uuid.uuid4().hex,
                 'dateModified': datetime.datetime.utcnow().isoformat()
             }]
-        bridge.db.get = MagicMock(side_effect=[None, db_dict_list[0]])
-        mock_get_resource_items.return_value = db_dict_list
+        with patch('__builtin__.True', AlmostAlwaysTrue(1)):
+            bridge.fill_resource_items_queue()
         self.assertEqual(bridge.resource_items_queue.qsize(), 0)
-        self.assertEqual(bridge.log_dict['add_to_resource_items_queue'], 0)
-        self.assertEqual(bridge.log_dict['skiped'], 0)
+
+        for item in db_dict_list:
+            bridge.input_queue.put({
+                'id': item['id'],
+                'dateModified': datetime.datetime.utcnow().isoformat()
+            })
         view_return_list = [
             munchify({
                 'id': db_dict_list[0]['id'],
@@ -279,15 +321,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             })
         ]
         bridge.db.view = MagicMock(return_value=view_return_list)
-        bridge.fill_resource_items_queue()
-        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
-        self.assertEqual(bridge.log_dict['add_to_resource_items_queue'], 1)
-        self.assertEqual(bridge.log_dict['skiped'], 1)
-
-        bridge.db.view = MagicMock(side_effect=IncompleteRead('test'))
-        with self.assertRaises(IncompleteRead) as e:
+        with patch('__builtin__.True', AlmostAlwaysTrue(1)):
             bridge.fill_resource_items_queue()
-        self.assertEqual(e.exception.args[0], 'test')
+        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
 
     @patch('openprocurement.edge.databridge.spawn')
     @patch('openprocurement.edge.databridge.ResourceItemWorker.spawn')
@@ -301,14 +337,15 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'progress': 99
         }
         bridge.server.tasks = MagicMock(return_value=[return_dict])
-        self.assertEqual(bridge.filter_workers_pool.free_count(),
-                         bridge.filter_workers_count)
+        bridge.filler = MagicMock()
+        bridge.filler.exception = Exception('test_filler')
+        bridge.input_queue_filler = MagicMock()
+        bridge.input_queue_filler.exception = Exception('test_temp_filler')
         self.assertEqual(bridge.workers_pool.free_count(),
                          bridge.workers_max)
         self.assertEqual(bridge.retry_workers_pool.free_count(),
                          bridge.retry_workers_max)
         bridge.gevent_watcher()
-        self.assertEqual(bridge.filter_workers_pool.free_count(), 0)
         self.assertEqual(bridge.workers_pool.free_count(),
                          bridge.workers_max - bridge.workers_min)
         self.assertEqual(bridge.retry_workers_pool.free_count(),
@@ -454,6 +491,11 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'last_response': datetime.datetime.now(),
             'resource_item_count': 31
         }
+        bridge.filler = MagicMock()
+        bridge.filler.exception = Exception('test_filler')
+        bridge.input_queue_filler = MagicMock()
+        bridge.input_queue_filler.exception = Exception('test_temp_filler')
+
         sleep(1)
         res = bridge.bridge_stats()
         keys = ['resource_items_queue_size', 'retry_resource_items_queue_size', 'workers_count',
@@ -548,11 +590,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(grown, 2)
         self.assertEqual(new_clients, 1)
 
+    @patch('openprocurement.edge.databridge.EdgeDataBridge.fill_input_queue')
     @patch('openprocurement.edge.databridge.EdgeDataBridge.fill_resource_items_queue')
     @patch('openprocurement.edge.databridge.EdgeDataBridge.queues_controller')
     @patch('openprocurement.edge.databridge.EdgeDataBridge.perfomance_watcher')
     @patch('openprocurement.edge.databridge.EdgeDataBridge.gevent_watcher')
-    def test_run(self, mock_gevent, mock_perfomance, mock_controller, mock_fill):
+    def test_run(self, mock_gevent, mock_perfomance, mock_controller,
+                 mock_fill, mock_fill_input_queue):
         bridge = EdgeDataBridge(self.config)
         self.assertEqual(len(bridge.filter_workers_pool), 0)
         with patch('__builtin__.True', AlmostAlwaysTrue(4)):
@@ -560,6 +604,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(mock_fill.call_count, 1)
         self.assertEqual(mock_controller.call_count, 1)
         self.assertEqual(mock_gevent.call_count, 1)
+        self.assertEqual(mock_fill_input_queue.call_count, 1)
 
 
 def suite():
