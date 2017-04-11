@@ -270,7 +270,6 @@ class EdgeDataBridge(object):
                     extra={'MESSAGE_ID': 'add_to_resource_items_queue',
                            'type': 'counter'})
                 self.log_dict['add_to_resource_items_queue'] += 1
-        input_dict = {}
 
     def fill_resource_items_queue(self):
         start_time = datetime.now()
@@ -298,6 +297,7 @@ class EdgeDataBridge(object):
                     self.bulk_query_interval):
                 if len(input_dict) > 0:
                     self.send_bulk(input_dict)
+                    input_dict = {}
                 start_time = datetime.now()
 
     def resource_items_filter(self, r_id, r_date_modified):
