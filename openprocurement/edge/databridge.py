@@ -16,7 +16,6 @@ from urlparse import urlparse
 from openprocurement_client.sync import ResourceFeeder, FINISHED
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
-from openprocurement.edge.collector import LogsCollector
 from openprocurement.edge.utils import (
     prepare_couchdb,
     prepare_couchdb_views,
@@ -150,15 +149,7 @@ class EdgeDataBridge(object):
         self.db = prepare_couchdb(self.couch_url, self.db_name, logger)
         db_url = self.couch_url + '/' + self.db_name
         prepare_couchdb_views(db_url, self.workers_config['resource'], logger)
-        collector_config = {
-            'main': {
-                'storage': 'couchdb',
-                'couch_url': self.couch_url,
-                'log_db': self.log_db_name
-            }
-        }
         self.server = Server(self.couch_url, session=Session(retry_delays=range(10)))
-        self.logger = LogsCollector(collector_config)
         self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.workers_config['resource'])
         extra_params = {
@@ -427,8 +418,6 @@ class EdgeDataBridge(object):
                         self.workers_config['resource'])):
                 logger.info('Watcher: Waiting for end of view indexing. Current'
                             ' progress: {} %'.format(t['progress']))
-
-        spawn(self.logger.save, self.bridge_stats())
         self.reset_log_counters()
         # for i in xrange(0, self.filter_workers_pool.free_count()):
         #     self.filter_workers_pool.spawn(self.fill_resource_items_queue)
