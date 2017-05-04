@@ -250,7 +250,9 @@ def clear_api_client_queue(queue, clients_info):
         try:
             client_dict = queue.get()
             if clients_info[client_dict['id']]['destroy']:
-                LOGGER.info('Drop lazy api_client {}'.format(client_dict['id']))
+                LOGGER.info(
+                    'Drop lazy api_client {}'.format(client_dict['id']),
+                    extra={'MESSAGE_ID': 'drop_client'})
                 del clients_info[client_dict['id']]
                 del client_dict
             else:
