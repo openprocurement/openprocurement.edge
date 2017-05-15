@@ -382,9 +382,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         })]
         bridge = EdgeDataBridge(self.config)
         self.assertEqual(bridge.api_clients_queue.qsize(), 0)
-        self.assertEqual(bridge.log_dict['exceptions_count'], 0)
         bridge.create_api_client()
-        self.assertEqual(bridge.log_dict['exceptions_count'], 1)
         self.assertEqual(bridge.api_clients_queue.qsize(), 1)
 
         del bridge
@@ -477,55 +475,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(res, 1.75)
         self.assertEqual(len(res_list), 4)
         self.assertEqual(grown, 1)
-
-    def test_bridge_stats(self):
-        bridge = EdgeDataBridge(self.config)
-        bridge.feeder = MagicMock()
-        bridge.feeder.queue.qsize.return_value = 44
-        bridge.feeder.backward_info = {
-            'last_response': datetime.datetime.now(),
-            'status': 1,
-            'resource_item_count': 13
-        }
-        bridge.feeder.forward_info = {
-            'last_response': datetime.datetime.now(),
-            'resource_item_count': 31
-        }
-        bridge.filler = MagicMock()
-        bridge.filler.exception = Exception('test_filler')
-        bridge.input_queue_filler = MagicMock()
-        bridge.input_queue_filler.exception = Exception('test_temp_filler')
-
-        sleep(1)
-        res = bridge.bridge_stats()
-        keys = ['resource_items_queue_size', 'retry_resource_items_queue_size', 'workers_count',
-                'api_clients_count', 'avg_request_duration', 'filter_workers_count',
-                'retry_workers_count', 'min_avg_request_duration', 'max_avg_request_duration']
-        for k, v in bridge.log_dict.items():
-            self.assertEqual(res[k], v)
-        for k in keys:
-            self.assertEqual(res[k], 0)
-        self.assertEqual(res['sync_backward_response_len'],
-                         bridge.feeder.backward_info['resource_item_count'])
-        self.assertEqual(res['sync_forward_response_len'],
-                         bridge.feeder.forward_info['resource_item_count'])
-        self.assertGreater(res['vms'], 0)
-        self.assertGreater(res['rss'], 0)
-        self.assertGreater(res['sync_backward_last_response'], 0)
-        self.assertGreater(res['sync_forward_last_response'], 0)
-        self.assertEqual(res['sync_queue'], 44)
-        self.assertEqual(res['resource'], bridge.workers_config['resource'])
-        self.assertEqual(res['_id'], bridge.workers_config['resource'])
-        self.assertNotEqual(res['time'], '')
-
-        bridge.feeder.backward_info['status'] = 0
-        bridge.api_clients_info['c1'] = {'request_durations': {datetime.datetime.now(): 1}}
-        bridge.api_clients_info['c2'] = {'request_durations': {datetime.datetime.now(): 2}}
-
-        res = bridge.bridge_stats()
-        self.assertEqual(res['sync_backward_last_response'], 0)
-        self.assertNotEqual(res['max_avg_request_duration'], 0)
-        self.assertNotEqual(res['min_avg_request_duration'], 0)
 
     def test__calculate_st_dev(self):
         bridge = EdgeDataBridge(self.config)
