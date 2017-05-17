@@ -13,7 +13,7 @@ from couchdb import Server, Session
 from httplib import IncompleteRead
 from yaml import load
 from urlparse import urlparse
-from openprocurement_client.sync import ResourceFeeder, FINISHED
+from openprocurement_client.sync import ResourceFeeder
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
 from openprocurement.edge.utils import (
