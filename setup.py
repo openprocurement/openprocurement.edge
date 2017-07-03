@@ -35,6 +35,9 @@ entry_points = {
     ],
     'console_scripts': [
         'edge_data_bridge = openprocurement.edge.databridge:main'
+    ],
+    'openprocurement.edge.plugins': [
+        'couchdb = openprocurement.edge.couchdb_storage:includme'
     ]
 }
 

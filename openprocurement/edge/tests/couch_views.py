@@ -122,9 +122,11 @@ class TestCouchViews(unittest.TestCase):
         ]
         cls.plans_path = [
             {'url': '/test_db/_design/plans/_show/show/{}'.format(cls.plan_id),
-            'template': 'files/pid.json'},
-            {'url': '/test_db/_design/plans/_show/show/{}?document_id=*'.format(cls.plan_id),
-            'template': 'files/plans_documents.json'},
+             'template': 'files/pid.json'},
+            {'url':
+                '/test_db/_design/plans/_show/show/{}?document_id=*'.format(
+                    cls.plan_id),
+             'template': 'files/plans_documents.json'},
             {'url': '/test_db/_design/plans/_show/show/{}?document_id=dbc6246ce0914eb4bda3b457bd562eac'.format(cls.plan_id), 'template': 'files/dbc6246ce0914eb4bda3b457bd562eac.json'},
         ]
         cls.contracts_path = [

@@ -21,7 +21,9 @@ PKG = get_distribution(__package__)
 LOGGER = getLogger(PKG.project_name)
 
 TZ = timezone(os.environ['TZ'] if 'TZ' in os.environ else 'Europe/Kiev')
-VERSION = '{}.{}'.format(int(PKG.parsed_version[0]), int(PKG.parsed_version[1]) if PKG.parsed_version[1].isdigit() else 0)
+VERSION = '{}.{}'.format(
+    int(PKG.parsed_version[0]), int(PKG.parsed_version[1]) if
+    PKG.parsed_version[1].isdigit() else 0)
 ROUTE_PREFIX = '/api/{}'.format(VERSION)
 SERVICE_FIELDS = ('__parent__', '_rev', '_id', 'doc_type')
 json_view = partial(view, renderer='json')
@@ -35,6 +37,10 @@ VALIDATE_BULK_DOCS_UPDATE = """function(newDoc, oldDoc, userCtx) {
 
 
 class DataBridgeConfigError(Exception):
+    pass
+
+
+class StorageException(Exception):
     pass
 
 
@@ -59,7 +65,8 @@ def prepare_couchdb(couch_url, db_name, logger):
         logger.error('Database error: {}'.format(e.message))
         raise DataBridgeConfigError(e.strerror)
 
-    validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})
+    validate_doc = db.get(VALIDATE_BULK_DOCS_ID,
+                          {'_id': VALIDATE_BULK_DOCS_ID})
     if validate_doc.get('validate_doc_update') != VALIDATE_BULK_DOCS_UPDATE:
         validate_doc['validate_doc_update'] = VALIDATE_BULK_DOCS_UPDATE
         db.save(validate_doc)
