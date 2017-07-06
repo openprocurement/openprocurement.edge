@@ -6,22 +6,16 @@ import math
 import logging
 import logging.config
 import os
-import psutil
 import argparse
 import uuid
-from couchdb import Server, Session
-from httplib import IncompleteRead
 from yaml import load
 from urlparse import urlparse
 from openprocurement_client.sync import ResourceFeeder
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement_client.client import TendersClient as APIClient
-from openprocurement.edge.utils import (
-    prepare_couchdb,
-    prepare_couchdb_views,
-    DataBridgeConfigError
-)
+from openprocurement.edge.utils import DataBridgeConfigError
 import gevent.pool
+from pkg_resources import iter_entry_points
 from gevent import spawn, sleep
 from gevent.queue import Queue, Empty
 from datetime import datetime, timedelta
@@ -34,19 +28,6 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
-
-WORKER_CONFIG = {
-    'resource': 'tenders',
-    'client_inc_step_timeout': 0.1,
-    'client_dec_step_timeout': 0.02,
-    'drop_threshold_client_cookies': 2,
-    'worker_sleep': 5,
-    'retry_default_timeout': 3,
-    'retries_count': 10,
-    'queue_timeout': 3,
-    'bulk_save_limit': 1000,
-    'bulk_save_interval': 5
-}
 
 DEFAULTS = {
     'retrieve_mode': '_all_',
@@ -62,7 +43,6 @@ DEFAULTS = {
     'filter_workers_count': 1,
     'watch_interval': 10,
     'user_agent': 'edge.multi',
-    'log_db_name': 'logs_db',
     'resource_items_queue_size': 10000,
     'input_queue_size': 10000,
     'resource_items_limit': 1000,
@@ -70,9 +50,25 @@ DEFAULTS = {
     'filter_workers_pool': 1,
     'bulk_query_interval': 5,
     'bulk_query_limit': 1000,
-    'couch_url': 'http://127.0.0.1:5984',
-    'db_name': 'edge_db',
-    'perfomance_window': 300
+    'perfomance_window': 300,
+    'storage_db': 'couchdb',
+    'storage': {
+        'db_name': 'edge_db',
+        'couch_url': 'http://127.0.0.1:5984'
+    }
+}
+
+WORKER_CONFIG = {
+    'resource': 'tenders',
+    'client_inc_step_timeout': 0.1,
+    'client_dec_step_timeout': 0.02,
+    'drop_threshold_client_cookies': 2,
+    'worker_sleep': 5,
+    'retry_default_timeout': 3,
+    'retries_count': 10,
+    'queue_timeout': 3,
+    'bulk_save_limit': 1000,
+    'bulk_save_interval': 5
 }
 
 
@@ -92,9 +88,9 @@ class EdgeDataBridge(object):
         # Check up_wait_sleep
         up_wait_sleep = self.retrievers_params.get('up_wait_sleep')
         if up_wait_sleep is not None and up_wait_sleep < 30:
-            raise DataBridgeConfigError('Invalid \'up_wait_sleep\' in '
-                                        '\'retrievers_params\'. Value must be '
-                                        'grater than 30.')
+            raise DataBridgeConfigError(
+                'Invalid \'up_wait_sleep\' in \'retrievers_params\'. '
+                'Value must be grater than 30.')
 
         # Workers settings
         for key in WORKER_CONFIG:
@@ -127,8 +123,6 @@ class EdgeDataBridge(object):
             self.retry_resource_items_queue = Queue(
                 self.retry_resource_items_queue_size)
 
-        self.process = psutil.Process(os.getpid())
-
         if self.api_host != '' and self.api_host is not None:
             api_host = urlparse(self.api_host)
             if api_host.scheme == '' and api_host.netloc == '':
@@ -137,13 +131,12 @@ class EdgeDataBridge(object):
         else:
             raise DataBridgeConfigError('In config dictionary empty or missing'
                                         ' \'tenders_api_server\'')
-        self.db = prepare_couchdb(self.couch_url, self.db_name, logger)
-        db_url = self.couch_url + '/' + self.db_name
-        prepare_couchdb_views(db_url, self.workers_config['resource'], logger)
-        self.server = Server(self.couch_url,
-                             session=Session(retry_delays=range(10)))
-        self.view_path = '_design/{}/_view/by_dateModified'.format(
-            self.workers_config['resource'])
+        storage = self.config_get('storage_db') or DEFAULTS['storage_db']
+        for entry_point in iter_entry_points('openprocurement.edge.plugins',
+                                             storage):
+            plugin = entry_point.load()
+            plugin(self.config)
+        self.storage = self.config.get('storage_obj')
         extra_params = {
             'mode': self.retrieve_mode,
             'limit': self.resource_items_limit
@@ -220,19 +213,7 @@ class EdgeDataBridge(object):
                 extra={'MESSAGE_ID': 'received_from_sync'})
 
     def send_bulk(self, input_dict):
-        sleep_before_retry = 2
-        for i in xrange(0, 3):
-            try:
-                rows = self.db.view(self.view_path, keys=input_dict.values())
-                resp_dict = {k.id: k.key for k in rows}
-                break
-            except (IncompleteRead, Exception) as e:
-                logger.error('Error while send bulk {}'.format(e.message),
-                             extra={'MESSAGE_ID': 'exceptions'})
-                if i == 2:
-                    raise e
-                sleep(sleep_before_retry)
-                sleep_before_retry *= 2
+        resp_dict = self.storage.filter(input_dict.values())
         for item_id, date_modified in input_dict.items():
             if item_id in resp_dict and date_modified == resp_dict[item_id]:
                 logger.debug('Ignored {} {}: SYNC - {}, EDGE - {}'.format(
@@ -276,23 +257,6 @@ class EdgeDataBridge(object):
                     input_dict = {}
                 start_time = datetime.now()
 
-    def resource_items_filter(self, r_id, r_date_modified):
-        try:
-            local_document = self.db.get(r_id)
-            if local_document:
-                if local_document['dateModified'] < r_date_modified:
-                    return True
-                else:
-                    return False
-            else:
-                return True
-        except Exception as e:
-            logger.error(
-                'Filter error: Error while getting {} {} from couchdb: '
-                '{}'.format(self.workers_config['resource'][:-1], r_id,
-                            e.message), extra={'MESSAGE_ID': 'exceptions'})
-            return True
-
     def _get_average_requests_duration(self):
         req_durations = []
         delta = timedelta(seconds=self.perfomance_window)
@@ -325,7 +289,7 @@ class EdgeDataBridge(object):
                 self.create_api_client()
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
                                              self.resource_items_queue,
-                                             self.db, self.workers_config,
+                                             self.storage, self.workers_config,
                                              self.retry_resource_items_queue,
                                              self.api_clients_info)
                 self.workers_pool.add(w)
@@ -353,13 +317,6 @@ class EdgeDataBridge(object):
 
     def gevent_watcher(self):
         self.perfomance_watcher()
-        for t in self.server.tasks():
-            if (t['type'] == 'indexer' and t['database'] == self.db_name and
-                    t.get('design_document', None) == '_design/{}'.format(
-                        self.workers_config['resource'])):
-                logger.info(
-                    'Watcher: Waiting for end of view indexing. Current'
-                    ' progress: {} %'.format(t['progress']))
 
         # Check fill threads
         input_threads = 1
@@ -389,7 +346,7 @@ class EdgeDataBridge(object):
             for i in xrange(0, (self.workers_min - len(self.workers_pool))):
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
                                              self.resource_items_queue,
-                                             self.db, self.workers_config,
+                                             self.storage, self.workers_config,
                                              self.retry_resource_items_queue,
                                              self.api_clients_info)
                 self.workers_pool.add(w)
@@ -405,7 +362,7 @@ class EdgeDataBridge(object):
                 self.create_api_client()
                 w = ResourceItemWorker.spawn(self.api_clients_queue,
                                              self.retry_resource_items_queue,
-                                             self.db, self.workers_config,
+                                             self.storage, self.workers_config,
                                              self.retry_resource_items_queue,
                                              self.api_clients_info)
                 self.retry_workers_pool.add(w)
