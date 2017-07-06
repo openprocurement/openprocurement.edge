@@ -496,7 +496,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         avg_duration = 1
         req_intervals = [0, 2, 0, 0]
         for cid in bridge.api_clients_info:
-            self.assertEqual(bridge.api_clients_info[cid]['destroy'], False)
+            self.assertEqual(bridge.api_clients_info[cid]['drop_cookies'], False)
             bridge.api_clients_info[cid]['avg_duration'] = avg_duration
             bridge.api_clients_info[cid]['grown'] = True
             bridge.api_clients_info[cid]['request_interval'] = req_intervals[avg_duration]
@@ -507,7 +507,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.api_clients_queue.qsize(), 6)
         to_destroy = 0
         for cid in bridge.api_clients_info:
-            if bridge.api_clients_info[cid]['destroy']:
+            if bridge.api_clients_info[cid]['drop_cookies']:
                 to_destroy += 1
         self.assertEqual(to_destroy, 3)
 
@@ -531,12 +531,12 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         for cid, info in bridge.api_clients_info.items():
             if info.get('grown', False):
                 grown += 1
-            elif not info.get('grown', False) and not info['destroy']:
+            elif not info.get('grown', False) and not info['drop_cookies']:
                 new_clients += 1
             self.assertEqual(len(info['request_durations']), 0)
-        self.assertEqual(len(bridge.api_clients_info), 3)
-        self.assertEqual(bridge.api_clients_queue.qsize(), 3)
-        self.assertEqual(grown, 2)
+        self.assertEqual(len(bridge.api_clients_info), 4)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 4)
+        self.assertEqual(grown, 3)
         self.assertEqual(new_clients, 1)
 
     @patch('openprocurement.edge.databridge.EdgeDataBridge.fill_input_queue')
