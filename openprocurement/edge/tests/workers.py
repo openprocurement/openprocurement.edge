@@ -432,7 +432,7 @@ class TestResourceItemWorker(unittest.TestCase):
 
         self.api_clients_info = {
             api_client_dict['id']: {
-                'destroy': False,
+                'drop_cookies': False,
                 'request_durations': []
             }
         }
