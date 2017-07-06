@@ -315,7 +315,8 @@ class TestResourceItemWorker(unittest.TestCase):
 
         # Successfull adding to bulk
         start_length = len(worker.bulk)
-        worker._add_to_bulk(resource_item_dict, queue_resource_item)
+        worker._add_to_bulk(resource_item_dict, queue_resource_item,
+                            resource_item_dict.get('_rev'))
         end_length = len(worker.bulk)
         self.assertGreater(end_length, start_length)
 
@@ -324,7 +325,8 @@ class TestResourceItemWorker(unittest.TestCase):
         new_resource_item_dict = deepcopy(resource_item_dict)
         new_resource_item_dict['dateModified'] =\
             datetime.datetime.utcnow().isoformat()
-        worker._add_to_bulk(new_resource_item_dict, queue_resource_item)
+        worker._add_to_bulk(new_resource_item_dict, queue_resource_item,
+                            new_resource_item_dict.get('_rev'))
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
 
@@ -335,7 +337,7 @@ class TestResourceItemWorker(unittest.TestCase):
             'id': queue_resource_item['id'],
             '_id': queue_resource_item['id'],
             'dateModified': old_date_modified
-        }, queue_resource_item)
+        }, queue_resource_item, None)
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
         del worker

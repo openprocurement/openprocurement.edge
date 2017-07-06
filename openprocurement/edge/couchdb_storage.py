@@ -36,7 +36,6 @@ class CouchDBStorage(object):
         self.view_path = '_design/{}/_view/by_dateModified'.format(
             self.resource)
 
-        self.checked_doc_rev = None
         self.start_time = datetime.now()
 
     def check(self, queue_resource_item):
@@ -47,17 +46,16 @@ class CouchDBStorage(object):
             if (resource_item_doc and
                     resource_item_doc['dateModified'] >=
                     queue_resource_item['dateModified']):
-                self.checked_doc_rev = None
-                return True
+                return True, None
         except Exception as e:
             logger.error('Error while getting resource item from couchdb: '
                          '{}'.format(e.message))
             raise StorageException(e.message)
         if resource_item_doc:
-            self.checked_doc_rev = resource_item_doc.get('_rev')
+            revision = resource_item_doc.get('_rev')
         else:
-            self.checked_doc_rev = None
-        return False
+            revision = None
+        return False, revision
 
     def filter(self, data):
         sleep_before_retry = 2
