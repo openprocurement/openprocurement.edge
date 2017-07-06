@@ -500,8 +500,8 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             avg_duration += 1
         avg = 1.5
         bridge._mark_bad_clients(avg)
-        self.assertEqual(len(bridge.api_clients_info), 6)
-        self.assertEqual(bridge.api_clients_queue.qsize(), 6)
+        self.assertEqual(len(bridge.api_clients_info), 3)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 3)
         to_destroy = 0
         for cid in bridge.api_clients_info:
             if bridge.api_clients_info[cid]['drop_cookies']:
@@ -524,17 +524,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
         bridge.perfomance_watcher()
         grown = 0
-        new_clients = 0
         for cid, info in bridge.api_clients_info.items():
             if info.get('grown', False):
                 grown += 1
-            elif not info.get('grown', False) and not info['drop_cookies']:
-                new_clients += 1
             self.assertEqual(len(info['request_durations']), 0)
-        self.assertEqual(len(bridge.api_clients_info), 4)
-        self.assertEqual(bridge.api_clients_queue.qsize(), 4)
+        self.assertEqual(len(bridge.api_clients_info), 3)
+        self.assertEqual(bridge.api_clients_queue.qsize(), 3)
         self.assertEqual(grown, 3)
-        self.assertEqual(new_clients, 1)
 
     @patch('openprocurement.edge.databridge.EdgeDataBridge.fill_input_queue')
     @patch('openprocurement.edge.databridge.EdgeDataBridge.'

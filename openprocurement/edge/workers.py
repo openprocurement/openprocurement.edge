@@ -3,6 +3,7 @@ from gevent import monkey
 monkey.patch_all()
 
 import os
+from types import BooleanType, TupleType
 from datetime import datetime
 from gevent import Greenlet
 from gevent import spawn, sleep
@@ -66,12 +67,11 @@ class ResourceItemWorker(Greenlet):
                 self.config['resource'][:-1], resource_item['id']),
                 extra={'MESSAGE_ID': 'add_to_retry'})
 
-    def _add_to_bulk(self, resource_item, queue_resource_item):
+    def _add_to_bulk(self, resource_item, queue_resource_item, revision):
         resource_item['doc_type'] = self.config['resource'][:-1].title()
         resource_item['_id'] = resource_item['id']
-        _rev = getattr(self.storage, 'checked_doc_rev', None)
-        if _rev is not None:
-            resource_item['_rev'] = _rev
+        if revision is not None:
+            resource_item['_rev'] = revision
         bulk_doc = self.bulk.get(resource_item['id'])
 
         if bulk_doc and bulk_doc['dateModified'] <\
@@ -302,11 +302,19 @@ class ResourceItemWorker(Greenlet):
             # Check in storage db
             try:
                 actual_in_storage = self.storage.check(queue_resource_item)
+                if isinstance(actual_in_storage, TupleType):
+                    actual, revision = actual_in_storage
+                elif isinstance(actual_in_storage, BooleanType):
+                    actual = actual_in_storage
+                    revision = None
+                else:
+                    raise Exception(
+                        'Method \'storage.check\' return invalid type.')
             except StorageException:
                 self.add_to_retry_queue(queue_resource_item)
                 self.api_clients_queue.put(api_client_dict)
                 continue  # pragma: no cover
-            if actual_in_storage:
+            if actual:
                 logger.debug('Ignored {} {} QUEUE - {}'.format(
                     self.config['resource'][:-1],
                     queue_resource_item['id'],
@@ -322,7 +330,7 @@ class ResourceItemWorker(Greenlet):
                 continue  # pragma: no cover
 
             # Add docs to bulk
-            self._add_to_bulk(resource_item, queue_resource_item)
+            self._add_to_bulk(resource_item, queue_resource_item, revision)
 
             # Save/Update docs in db if exit == True
             if self.exit:
