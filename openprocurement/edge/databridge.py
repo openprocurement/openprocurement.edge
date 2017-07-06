@@ -394,14 +394,12 @@ class EdgeDataBridge(object):
         for cid, info in self.api_clients_info.items():
             if info.get('grown', False) and info['avg_duration'] > dev:
                 info['drop_cookies'] = True
-                self.create_api_client()
                 logger.debug(
                     'Perfomance watcher: Mark client {} as bad, avg.'
                     ' request_duration is {} sec.'.format(
                         cid, info['avg_duration']),
                     extra={'MESSAGE_ID': 'marked_as_bad'})
             elif info['avg_duration'] < dev and info['request_interval'] > 0:
-                self.create_api_client()
                 info['drop_cookies'] = True
                 logger.debug(
                     'Perfomance watcher: Mark client {} as bad,'
