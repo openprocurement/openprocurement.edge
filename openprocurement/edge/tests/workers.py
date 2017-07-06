@@ -114,10 +114,14 @@ class TestResourceItemWorker(unittest.TestCase):
         api_clients_queue.put(client_dict2)
         api_clients_info = {
             client_dict['id']: {
-                'destroy': False
+                'drop_cookies': False,
+                'not_actual_count': 5,
+                'request_interval': 3
             },
             client_dict2['id']: {
-                'destroy': True
+                'drop_cookies': True,
+                'not_actual_count': 3,
+                'request_interval': 2
             }
         }
 
@@ -131,7 +135,8 @@ class TestResourceItemWorker(unittest.TestCase):
 
         # Get lazy client
         api_client = worker._get_api_client_dict()
-        self.assertEqual(api_client, None)
+        self.assertEqual(api_client['not_actual_count'], 0)
+        self.assertEqual(api_client['request_interval'], 0)
 
         # Empty queue test
         api_client = worker._get_api_client_dict()
@@ -177,7 +182,7 @@ class TestResourceItemWorker(unittest.TestCase):
         }
         api_clients_queue.put(client_dict)
         api_clients_info =\
-            {client_dict['id']: {'destroy': False, 'request_durations': {}}}
+            {client_dict['id']: {'drop_cookies': False, 'request_durations': {}}}
         retry_queue = Queue()
         return_dict = {
             'data': {
@@ -424,6 +429,7 @@ class TestResourceItemWorker(unittest.TestCase):
         }
         client.session.headers = {'User-Agent': 'Test-Agent'}
         # api_clients_queue.put(api_client_dict)
+
         self.api_clients_info = {
             api_client_dict['id']: {
                 'destroy': False,
@@ -432,6 +438,7 @@ class TestResourceItemWorker(unittest.TestCase):
         }
         self.storage = CouchDBStorage('test_db', 'http://127.0.0.1:5984',
                                       'tenders')
+        self.db = MagicMock()
 
         # Try get api client from clients queue
         log_capture_string = StringIO()

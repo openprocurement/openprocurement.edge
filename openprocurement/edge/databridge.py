@@ -20,7 +20,6 @@ from gevent import spawn, sleep
 from gevent.queue import Queue, Empty
 from datetime import datetime, timedelta
 from .workers import ResourceItemWorker
-from .utils import clear_api_client_queue
 
 try:
     import urllib3.contrib.pyopenssl
@@ -177,7 +176,7 @@ class EdgeDataBridge(object):
                     'not_actual_count': 0
                 }
                 self.api_clients_info[api_client_dict['id']] = {
-                    'destroy': False,
+                    'drop_cookies': False,
                     'request_durations': {},
                     'request_interval': 0,
                     'avg_duration': 0
@@ -394,7 +393,7 @@ class EdgeDataBridge(object):
         # Mark bad api clients
         for cid, info in self.api_clients_info.items():
             if info.get('grown', False) and info['avg_duration'] > dev:
-                info['destroy'] = True
+                info['drop_cookies'] = True
                 self.create_api_client()
                 logger.debug(
                     'Perfomance watcher: Mark client {} as bad, avg.'
@@ -403,7 +402,7 @@ class EdgeDataBridge(object):
                     extra={'MESSAGE_ID': 'marked_as_bad'})
             elif info['avg_duration'] < dev and info['request_interval'] > 0:
                 self.create_api_client()
-                info['destroy'] = True
+                info['drop_cookies'] = True
                 logger.debug(
                     'Perfomance watcher: Mark client {} as bad,'
                     ' request_interval is {} sec.'.format(
@@ -443,8 +442,6 @@ class EdgeDataBridge(object):
                        'REQUESTS_MAX_AVG': max_avg,
                        'REQUESTS_AVG': avg_duration * 1000})
             self._mark_bad_clients(dev)
-            clear_api_client_queue(self.api_clients_queue,
-                                   self.api_clients_info)
 
     def run(self):
         logger.info('Start Edge Bridge',
