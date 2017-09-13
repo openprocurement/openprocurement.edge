@@ -14,8 +14,7 @@ from openprocurement.edge.utils import (
     route_prefix,
     push_views,
     update_logging_context,
-    fix_url,
-    clear_api_client_queue
+    fix_url
 )
 
 logger = logging.getLogger()
@@ -101,29 +100,6 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(DataBridgeConfigError) as e:
             push_views(couchapp_path='/haha', couch_url='')
         self.assertEqual(e.exception.message, 'Invalid path to couchapp.')
-
-    def test_clear_api_client_queue(self):
-        queue = Queue()
-        client_dict = {
-            'id': uuid.uuid4().hex,
-            'client': None
-        }
-        client_dict2 = {
-            'id': uuid.uuid4().hex,
-            'client': None
-        }
-        clients_info = {
-            client_dict['id']: {'destroy': False},
-            client_dict2['id']: {'destroy': True}
-        }
-        queue.put(client_dict)
-        queue.put(client_dict2)
-
-        self.assertEqual(queue.qsize(), 2)
-        clear_api_client_queue(queue, clients_info)
-        self.assertEqual(queue.qsize(), 1)
-        client_dict_from_queue = queue.get()
-        self.assertEqual(client_dict, client_dict_from_queue)
 
 
 def suite():
