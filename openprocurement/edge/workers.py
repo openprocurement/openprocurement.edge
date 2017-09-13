@@ -9,13 +9,15 @@ from gevent import spawn, sleep
 from gevent.queue import Empty
 from iso8601 import parse_date
 from pytz import timezone
+from requests.exceptions import ConnectionError
 import logging
 import logging.config
 import time
 from openprocurement_client.exceptions import (
     InvalidResponse,
     RequestFailed,
-    ResourceNotFound
+    ResourceNotFound,
+    ResourceGone
 )
 
 logger = logging.getLogger(__name__)
@@ -68,20 +70,29 @@ class ResourceItemWorker(Greenlet):
 
     def _get_api_client_dict(self):
         if not self.api_clients_queue.empty():
-            while True:
+            try:
+                api_client_dict = self.api_clients_queue.get(
+                    timeout=self.config['queue_timeout'])
+            except Empty:
+                return None
+            if self.api_clients_info[api_client_dict['id']]['drop_cookies']:
                 try:
-                    api_client_dict = self.api_clients_queue.get(
-                        timeout=self.config['queue_timeout'])
-                except Empty:
+                    api_client_dict['client'].renew_cookies()
+                    self.api_clients_info[api_client_dict['id']] = {
+                        'drop_cookies': False,
+                        'request_durations': {},
+                        'request_interval': 0,
+                        'avg_duration': 0
+                    }
+                    api_client_dict['request_interval'] = 0
+                    api_client_dict['not_actual_count'] = 0
+                    logger.info('Drop lazy api_client {} cookies'.format(
+                        api_client_dict['id']))
+                except (Exception, ConnectionError) as e:
+                    logger.error('While renewing cookies catch exception: '
+                                 '{}'.format(e.message))
                     return None
-                if self.api_clients_info[api_client_dict['id']]['destroy']:
-                    logger.info('Drop lazy api_client {}'.format(
-                        api_client_dict['id']),
-                        extra={'MESSAGE_ID': 'drop_client'})
-                    del self.api_clients_info[api_client_dict['id']]
-                    del api_client_dict
-                else:
-                    break
+
             logger.debug('Got api_client ID: {} {}'.format(
                 api_client_dict['id'],
                 api_client_dict['client'].session.headers['User-Agent']))
@@ -136,6 +147,13 @@ class ResourceItemWorker(Greenlet):
                 return None  # Not actual
             self.api_clients_queue.put(api_client_dict)
             return resource_item
+        except ResourceGone:
+            self.api_clients_queue.put(api_client_dict)
+            logger.info(
+                '{} {} archived.'.format(self.config['resource'][:-1].title(),
+                                         queue_resource_item['id'])
+            )
+            return None  # Archived
         except InvalidResponse as e:
             self.api_clients_info[api_client_dict['id']][
                 'request_durations'][datetime.now()] = time.time() - start
