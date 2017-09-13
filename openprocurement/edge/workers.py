@@ -16,7 +16,8 @@ import time
 from openprocurement_client.exceptions import (
     InvalidResponse,
     RequestFailed,
-    ResourceNotFound
+    ResourceNotFound,
+    ResourceGone
 )
 
 logger = logging.getLogger(__name__)
@@ -146,6 +147,13 @@ class ResourceItemWorker(Greenlet):
                 return None  # Not actual
             self.api_clients_queue.put(api_client_dict)
             return resource_item
+        except ResourceGone:
+            self.api_clients_queue.put(api_client_dict)
+            logger.info(
+                '{} {} archived.'.format(self.config['resource'][:-1].title(),
+                                         queue_resource_item['id'])
+            )
+            return None  # Archived
         except InvalidResponse as e:
             self.api_clients_info[api_client_dict['id']][
                 'request_durations'][datetime.now()] = time.time() - start

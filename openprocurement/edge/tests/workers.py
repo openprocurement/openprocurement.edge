@@ -10,15 +10,16 @@ from munch import munchify
 from openprocurement_client.exceptions import (
     InvalidResponse,
     RequestFailed,
-    ResourceNotFound as RNF
+    ResourceNotFound as RNF,
+    ResourceGone
 )
 from openprocurement.edge.workers import ResourceItemWorker
 import logging
-import sys
 from StringIO import StringIO
 from openprocurement.edge.workers import logger
 
 logger.setLevel(logging.DEBUG)
+
 
 class TestResourceItemWorker(unittest.TestCase):
 
@@ -266,6 +267,19 @@ class TestResourceItemWorker(unittest.TestCase):
         # ResourceNotFound
         mock_api_client.get_resource_item.side_effect = RNF(
             munchify({'status_code': 404}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 6)
+
+        # ResourceGone
+        mock_api_client.get_resource_item.side_effect = ResourceGone(munchify(
+            {'status_code': 410}
+        ))
         api_client = worker._get_api_client_dict()
         self.assertEqual(worker.api_clients_queue.qsize(), 0)
         public_item = worker._get_resource_item_from_public(api_client, item)

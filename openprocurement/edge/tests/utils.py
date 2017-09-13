@@ -4,7 +4,6 @@ import logging
 import os
 import uuid
 from couchdb import Server
-from gevent.queue import Queue
 from mock import patch, MagicMock
 from openprocurement.edge.utils import (
     VALIDATE_BULK_DOCS_ID,
