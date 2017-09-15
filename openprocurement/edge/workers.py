@@ -114,7 +114,7 @@ class ResourceItemWorker(Greenlet):
     def _get_resource_item_from_public(self, api_client_dict,
                                        queue_resource_item):
         try:
-            logger.info('Request interval {} sec. for client {}'.format(
+            logger.debug('Request interval {} sec. for client {}'.format(
                 api_client_dict['request_interval'],
                 api_client_dict['client'].session.headers['User-Agent']))
             start = time.time()
