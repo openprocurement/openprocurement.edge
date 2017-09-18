@@ -89,6 +89,7 @@ class ResourceItemWorker(Greenlet):
                     logger.info('Drop lazy api_client {} cookies'.format(
                         api_client_dict['id']))
                 except (Exception, ConnectionError) as e:
+                    self.api_clients_queue.put(api_client_dict)
                     logger.error('While renewing cookies catch exception: '
                                  '{}'.format(e.message))
                     return None
