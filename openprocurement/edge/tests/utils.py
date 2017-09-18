@@ -13,7 +13,8 @@ from openprocurement.edge.utils import (
     route_prefix,
     push_views,
     update_logging_context,
-    fix_url
+    fix_url,
+    VERSION
 )
 
 logger = logging.getLogger()
@@ -42,12 +43,17 @@ class TestUtils(unittest.TestCase):
     def test_fix_url(self):
         url = "/tenders/ttt/bids/bbb/documents/ddd?download=very_big_doc"
         item = {
-            "format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "format":
+                "application/vnd.openxmlformats-officedocument.' \
+                'wordprocessingml.document",
             "url": url
         }
-        res = fix_url(item, 'https://public.api-sandbox.openprocurement.org')
-        self.assertEqual(item['url'], 'https://public.api-sandbox.openprocurement.org' +\
-                         '/api/1.0' + url)
+        fix_url(item, 'https://public.api-sandbox.openprocurement.org')
+        self.assertEqual(
+            item['url'],
+            'https://public.api-sandbox.openprocurement.org/api/{}'.format(
+                VERSION) + url
+        )
 
     def test_prepare_couchdb(self):
         # Database don't exist.
@@ -74,9 +80,9 @@ class TestUtils(unittest.TestCase):
     def test_route_prefix(self):
         # Default value
         prefix = route_prefix()
-        self.assertEqual(prefix, '/api/1.0')
-        prefix = route_prefix(settings={'api_version': 2.3})
-        self.assertEqual(prefix, '/api/2.3')
+        self.assertEqual(prefix, '/api/{}'.format(VERSION))
+        prefix = route_prefix(settings={'api_version': 2.4})
+        self.assertEqual(prefix, '/api/2.4')
         prefix = route_prefix(settings={'api_version': 'my version'})
         self.assertEqual(prefix, '/api/my version')
 
