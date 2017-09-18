@@ -6,7 +6,6 @@ from cornice.util import json_error
 from couchapp.dispatch import dispatch
 from couchdb import Server, Session
 from datetime import datetime
-from gevent.queue import Empty
 from socket import error
 from Crypto.Cipher import AES
 from functools import partial
@@ -21,7 +20,7 @@ PKG = get_distribution(__package__)
 LOGGER = getLogger(PKG.project_name)
 
 TZ = timezone(os.environ['TZ'] if 'TZ' in os.environ else 'Europe/Kiev')
-VERSION = '{}.{}'.format(int(PKG.parsed_version[0]), int(PKG.parsed_version[1]) if PKG.parsed_version[1].isdigit() else 0)
+VERSION = '2.3'
 ROUTE_PREFIX = '/api/{}'.format(VERSION)
 SERVICE_FIELDS = ('__parent__', '_rev', '_id', 'doc_type')
 json_view = partial(view, renderer='json')
