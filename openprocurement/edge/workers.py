@@ -91,7 +91,7 @@ class ResourceItemWorker(Greenlet):
                 except (Exception, ConnectionError) as e:
                     self.api_clients_queue.put(api_client_dict)
                     logger.error('While renewing cookies catch exception: '
-                                 '{}'.format(e.message))
+                                 '{}'.format(repr(e)))
                     return None
 
             logger.debug('Got api_client ID: {} {}'.format(
@@ -162,10 +162,9 @@ class ResourceItemWorker(Greenlet):
                 api_client_dict['request_interval']
             self.api_clients_queue.put(api_client_dict)
             logger.error(
-                'Error while getting {} {} from public with status code: '
-                '{}'.format(
+                'Error while getting {} {} from public: {}'.format(
                     self.config['resource'][:-1], queue_resource_item['id'],
-                    e.status_code), extra={'MESSAGE_ID': 'exceptions'})
+                    repr(e)), extra={'MESSAGE_ID': 'exceptions'})
             self.add_to_retry_queue({
                 'id': queue_resource_item['id'],
                 'dateModified': queue_resource_item['dateModified']
@@ -189,10 +188,9 @@ class ResourceItemWorker(Greenlet):
             else:
                 self.api_clients_queue.put(api_client_dict)
             logger.error(
-                'Request failed while getting {} {} from public with status '
-                'code {}: '.format(
+                'Request failed while getting {} {} from public: {}'.format(
                     self.config['resource'][:-1], queue_resource_item['id'],
-                    e.status_code), extra={'MESSAGE_ID': 'exceptions'})
+                    repr(e)), extra={'MESSAGE_ID': 'exceptions'})
             self.add_to_retry_queue({
                 'id': queue_resource_item['id'],
                 'dateModified': queue_resource_item['dateModified']
@@ -205,7 +203,7 @@ class ResourceItemWorker(Greenlet):
                 api_client_dict['request_interval']
             logger.error('Resource not found {} at public: {} {}. {}'.format(
                 self.config['resource'][:-1], queue_resource_item['id'],
-                queue_resource_item['dateModified'], e.message),
+                queue_resource_item['dateModified'], repr(e)),
                 extra={'MESSAGE_ID': 'not_found_docs'})
             api_client_dict['client'].session.cookies.clear()
             logger.info('Clear client cookies')
@@ -225,7 +223,7 @@ class ResourceItemWorker(Greenlet):
                 'Error while getting resource item {} {} {} from public '
                 '{}: '.format(
                     self.config['resource'][:-1], queue_resource_item['id'],
-                    queue_resource_item['dateModified'], e.message),
+                    queue_resource_item['dateModified'], repr(e)),
                 extra={'MESSAGE_ID': 'exceptions'})
             self.add_to_retry_queue({
                 'id': queue_resource_item['id'],
@@ -234,11 +232,16 @@ class ResourceItemWorker(Greenlet):
             return None
 
     def _add_to_bulk(self, resource_item, queue_resource_item,
-                     resource_item_doc):
+                     local_resource_doc):
         resource_item['doc_type'] = self.config['resource'][:-1].title()
         resource_item['_id'] = resource_item['id']
-        if resource_item_doc:
-            resource_item['_rev'] = resource_item_doc['_rev']
+
+        # Setup service keys
+        if local_resource_doc:
+            for k in local_resource_doc:
+                if k.startswith('_'):
+                    resource_item[k] = local_resource_doc[k]
+
         bulk_doc = self.bulk.get(resource_item['id'])
 
         if bulk_doc and bulk_doc['dateModified'] <\
@@ -247,7 +250,7 @@ class ResourceItemWorker(Greenlet):
                 'Replaced {} in bulk {} previous {}, current {}'.format(
                     self.config['resource'][:-1], bulk_doc['id'],
                     bulk_doc['dateModified'], resource_item['dateModified']),
-                extra={'MESSAGE_ID': 'skiped'})
+                extra={'MESSAGE_ID': 'skipped'})
             self.bulk[resource_item['id']] = resource_item
         elif bulk_doc and bulk_doc['dateModified'] >=\
                 resource_item['dateModified']:
@@ -256,7 +259,7 @@ class ResourceItemWorker(Greenlet):
                 '{}'.format(
                     self.config['resource'][:-1], resource_item['id'],
                     bulk_doc['dateModified'], resource_item['dateModified']),
-                extra={'MESSAGE_ID': 'skiped'})
+                extra={'MESSAGE_ID': 'skipped'})
         if not bulk_doc:
             self.bulk[resource_item['id']] = resource_item
             logger.debug('Put in bulk {} {} {}'.format(
@@ -264,55 +267,55 @@ class ResourceItemWorker(Greenlet):
                 resource_item['dateModified']))
         return
 
+    def log_timeshift(self, resource_item):
+        ts = (datetime.now(TZ) -
+              parse_date(resource_item['dateModified'])).total_seconds()
+        logger.debug('{} {} timeshift is {} sec.'.format(
+            self.config['resource'][:-1], resource_item['id'], ts),
+            extra={'DOCUMENT_TIMESHIFT': ts})
+
     def _save_bulk_docs(self):
         if (len(self.bulk) > self.bulk_save_limit or
                 (datetime.now() - self.start_time).total_seconds() >
                 self.bulk_save_interval or self.exit):
             try:
-                res = self.db.update(self.bulk.values())
-                for resource_item in self.bulk.values():
-                    ts = (datetime.now(TZ) -
-                          parse_date(resource_item[
-                              'dateModified'])).total_seconds()
-                    logger.debug('{} {} timeshift is {} sec.'.format(
-                        self.config['resource'][:-1], resource_item['id'], ts),
-                        extra={'DOCUMENT_TIMESHIFT': ts})
+                res = self.db.save_bulk(self.bulk)
                 logger.info('Save bulk {} docs to db.'.format(len(self.bulk)))
             except Exception as e:
                 logger.error('Error while saving bulk_docs in db: {}'.format(
-                    e.message), extra={'MESSAGE_ID': 'exceptions'})
+                    repr(e)), extra={'MESSAGE_ID': 'exceptions'})
                 for doc in self.bulk.values():
                     self.add_to_retry_queue(
                         {'id': doc['id'], 'dateModified': doc['dateModified']})
                 self.bulk = {}
                 self.start_time = datetime.now()
                 return
+            for success, doc_id, reason in res:
+                if success and reason == 'updated':
+                    logger.info('Update {} {}'.format(
+                        self.config['resource'][:-1], doc_id),
+                        extra={'MESSAGE_ID': 'update_documents'})
+                    self.log_timeshift(self.bulk[doc_id])
+                if success and reason == 'created':
+                    logger.info('Save {} {}'.format(
+                        self.config['resource'][:-1], doc_id),
+                        extra={'MESSAGE_ID': 'save_documents'})
+                    self.log_timeshift(self.bulk[doc_id])
+                if success and reason == 'skipped':
+                    logger.info('Skipped {} {}'.format(
+                        self.config['resource'][:-1], doc_id),
+                        extra={'MESSAGE_ID': 'skipped'})
+                    self.log_timeshift(self.bulk[doc_id])
+                if not success:
+                    logger.warning(
+                        'Put to retry queue {} {} with reason: '
+                        '{}'.format(self.config['resource'][:-1],
+                                    doc_id, repr(reason)))
+                    self.add_to_retry_queue(
+                        {'id': doc_id,
+                         'dateModified': self.bulk[doc_id]['dateModified']}
+                    )
             self.bulk = {}
-            for success, doc_id, rev_or_exc in res:
-                if success:
-                    if not rev_or_exc.startswith('1-'):
-                        logger.info('Update {} {}'.format(
-                            self.config['resource'][:-1], doc_id),
-                            extra={'MESSAGE_ID': 'update_documents'})
-                    else:
-                        logger.info('Save {} {}'.format(
-                            self.config['resource'][:-1], doc_id),
-                            extra={'MESSAGE_ID': 'save_documents'})
-                    continue
-                else:
-                    if rev_or_exc.message !=\
-                            u'New doc with oldest dateModified.':
-                        self.add_to_retry_queue({'id': doc_id,
-                                                 'dateModified': None})
-                        logger.error(
-                            'Put to retry queue {} {} with reason: '
-                            '{}'.format(self.config['resource'][:-1],
-                                        doc_id, rev_or_exc.message))
-                    else:
-                        logger.debug('Ignored {} {} with reason: {}'.format(
-                            self.config['resource'][:-1], doc_id, rev_or_exc),
-                            extra={'MESSAGE_ID': 'skiped'})
-                        continue
             self.start_time = datetime.now()
 
     def _run(self):
@@ -335,7 +338,7 @@ class ResourceItemWorker(Greenlet):
             # Try get resource item from local storage
             try:
                 # Resource object from local db server
-                resource_item_doc = self.db.get(queue_resource_item['id'])
+                local_resource_doc = self.db.get_doc(queue_resource_item['id'])
                 if queue_resource_item['dateModified'] is None:
                     public_doc = self._get_resource_item_from_public(
                         api_client_dict, queue_resource_item)
@@ -348,15 +351,15 @@ class ResourceItemWorker(Greenlet):
                     if api_client_dict is None:
                         self.add_to_retry_queue(queue_resource_item)
                         continue
-                if (resource_item_doc and
-                        resource_item_doc['dateModified'] >=
+                if (local_resource_doc and
+                        local_resource_doc['dateModified'] >=
                         queue_resource_item['dateModified']):
                     logger.debug('Ignored {} {} QUEUE - {}, EDGE - {}'.format(
                         self.config['resource'][:-1],
                         queue_resource_item['id'],
                         queue_resource_item['dateModified'],
-                        resource_item_doc['dateModified']),
-                        extra={'MESSAGE_ID': 'skiped'})
+                        local_resource_doc['dateModified']),
+                        extra={'MESSAGE_ID': 'skipped'})
                     self.api_clients_queue.put(api_client_dict)
                     continue
             except Exception as e:
@@ -366,7 +369,7 @@ class ResourceItemWorker(Greenlet):
                     'dateModified': queue_resource_item['dateModified']
                 })
                 logger.error('Error while getting resource item from couchdb: '
-                             '{}'.format(e.message),
+                             '{}'.format(repr(e)),
                              extra={'MESSAGE_ID': 'exceptions'})
                 continue
 
@@ -378,7 +381,7 @@ class ResourceItemWorker(Greenlet):
 
             # Add docs to bulk
             self._add_to_bulk(resource_item, queue_resource_item,
-                              resource_item_doc)
+                              local_resource_doc)
 
             # Save/Update docs in db
             self._save_bulk_docs()

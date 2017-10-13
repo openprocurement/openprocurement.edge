@@ -19,7 +19,8 @@ requires = [
     'tzlocal',
     'pyyaml',
     'psutil',
-    'iso8601'
+    'iso8601',
+    'elasticsearch'
 ]
 test_requires = requires + [
     'requests',
@@ -35,6 +36,10 @@ entry_points = {
     ],
     'console_scripts': [
         'edge_data_bridge = openprocurement.edge.databridge:main'
+    ],
+    'openprocurement.edge.storage.plugins': [
+        'couchdb = openprocurement.edge.storages.couchdb_plugin:includme',
+        'elasticsearch = openprocurement.edge.storages.elasticsearch_plugin:includme'
     ]
 }
 
