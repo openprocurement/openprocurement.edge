@@ -34,8 +34,8 @@ function(doc, req) {
       id: req.query.lot_id
     },
     questions:{
-        id: req.query.question_id
-      }
+      id: req.query.question_id
+    }
   };
   var FIELDS_TO_CLEAR = ['_id','_rev', '_revisions', 'doc_type'];
 
@@ -66,32 +66,33 @@ function(doc, req) {
     var query = Object.keys(req.query);
     var key = query[query.length -1]
     var name;
-
-   if(!data) {
-
-     if(req.query[key] == '*') {
-       return {
-         body: JSON.stringify({data:[]}),
-         headers: {"Content-Type": "text/plain; charset=utf-8"}
-       };
-     }
     query.length != 0 ? name = key : name = 'auction_id';
-
-    return {
+    var notFoundObj = {
       code: 404,
-        json: {
-          "status": "error",
-          "errors":[{
-              "location": "url",
-              "name": name,
-              "description": "Not found"
-          }]
+      json: {
+        "status": "error",
+        "errors":[{
+          "location": "url",
+          "name": name,
+          "description": "Not found"
+        }]
       }
     };
 
-  }
+    if (doc.doc_type && doc.doc_type != 'Auction') {
+      return notFoundObj
+    }
+    if(!data) {
+      if(req.query[key] == '*') {
+        return {
+          body: JSON.stringify({data:[]}),
+          headers: {"Content-Type": "text/plain; charset=utf-8"}
+        };
+      }
+      return notFoundObj
+    }
 
-      clearFields(data);
+    clearFields(data);
 
     return {
       body: JSON.stringify({data:data}),
@@ -106,10 +107,10 @@ function(doc, req) {
 
     docs.forEach(function(item, i) {
       if (!unic[item.id] ||
-           Date.parse(docs[unic[item.id]].dateModified) <
-           Date.parse(item.dateModified)
-         )
-         unic[item.id] = i;
+          Date.parse(docs[unic[item.id]].dateModified) <
+          Date.parse(item.dateModified)
+      )
+        unic[item.id] = i;
     });
     for (key in unic)
       result.push(docs[unic[key]]);
@@ -119,7 +120,7 @@ function(doc, req) {
 
   function getLastDoc(docs, id) {
     var allDocs = [],
-        length = docs.length;
+    length = docs.length;
     var result;
 
     for(;length--;)

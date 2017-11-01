@@ -26,54 +26,62 @@ function(doc, req) {
     return obj;
   }
 
-function formatResponse(data) {
-   if (!data){
+  function notFoundObj(name) {
+    return {
+      code: 404,
+      json: {
+        "status": "error",
+        "errors":[{
+          "location": "url",
+          "name": name,
+          "description": "Not found"
+        }]
+      }
+    };
+  }
 
-     if (req.query.document_id) {
-       if(req.query.document_id == '*') {
-         return {
-           body: JSON.stringify({data:[]}),
-           headers: {"Content-Type": "text/plain; charset=utf-8"}
-         };
-       }
-        else var name = 'document_id';
+  function formatResponse(data) {
+    if (doc.doc_type && doc.doc_type != 'Plan') {
+      return notFoundObj('plan_id')
     }
-     else var name = 'plan_id';
-     return {
-       code: 404,
-       json: {
-           "status": "error",
-           "errors":[{
-               "location": "url",
-               "name": name,
-               "description": "Not found"
-           }]
-       }
-     };
-   }
+    if (!data){
+      if (req.query.document_id) {
+        if(req.query.document_id == '*') {
+          return {
+            body: JSON.stringify({data:[]}),
+            headers: {"Content-Type": "text/plain; charset=utf-8"}
+          };
+        }
+        else
+          var name = 'document_id';
+      }
+      else
+        var name = 'plan_id';
+      return notFoundObj(name)
+    }
 
-     clearFields(data);
+    clearFields(data);
 
-   return {
-     body: JSON.stringify({data:data}),
-     headers: {"Content-Type": "text/plain; charset=utf-8"}
-   };
- }
+    return {
+      body: JSON.stringify({data:data}),
+      headers: {"Content-Type": "text/plain; charset=utf-8"}
+    };
+  }
 
   function groupDocuments(docs){
     var result = [];
     var unic = {};
     var key, i;
     if (docs){
-        docs.forEach(function(item, i) {
-          if (!unic[item.id] ||
-               Date.parse(docs[unic[item.id]].dateModified) <
-               Date.parse(item.dateModified)
-             )
-             unic[item.id] = i;
-        });
-        for (key in unic)
-          result.push(docs[unic[key]]);
+      docs.forEach(function(item, i) {
+        if (!unic[item.id] ||
+            Date.parse(docs[unic[item.id]].dateModified) <
+            Date.parse(item.dateModified)
+        )
+          unic[item.id] = i;
+      });
+      for (key in unic)
+        result.push(docs[unic[key]]);
     }
     return result;
   }
@@ -81,7 +89,7 @@ function formatResponse(data) {
   function getLastDoc(docs, id) {
     if (docs){
       var allDocs = [],
-          length = docs.length;
+      length = docs.length;
       var result;
 
       for(;length--;)
@@ -92,7 +100,6 @@ function formatResponse(data) {
         result.previousVersions = allDocs.slice(1);
     }
     return result;
-
   }
 
   function clearFields(data) {

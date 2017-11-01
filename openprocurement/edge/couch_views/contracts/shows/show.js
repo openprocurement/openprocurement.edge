@@ -25,9 +25,25 @@ function(doc, req) {
     return obj;
   }
 
-  function formatResponse(data) {
-    if (!data){
+  function notFoundObj(name) {
+    return {
+      code: 404,
+      json: {
+        "status": "error",
+        "errors":[{
+          "location": "url",
+          "name": name,
+          "description": "Not found"
+        }]
+      }
+    };
+  }
 
+  function formatResponse(data) {
+    if (doc.doc_type && doc.doc_type != 'Contract') {
+      return notFoundObj('contract_id')
+    }
+    if (!data){
       if (req.query.document_id) {
         if(req.query.document_id == '*') {
           return {
@@ -35,21 +51,12 @@ function(doc, req) {
             headers: {"Content-Type": "text/plain; charset=utf-8"}
           };
         }
-         else var name = 'document_id';
-     }
+        else
+          var name = 'document_id';
+      }
       else
         var name = 'contract_id';
-      return {
-        code: 404,
-        json: {
-            "status": "error",
-            "errors":[{
-                "location": "url",
-                "name": name,
-                "description": "Not found"
-            }]
-        }
-      };
+      return notFoundObj(name)
     }
 
     clearFields(data);
@@ -65,15 +72,15 @@ function(doc, req) {
     var unic = {};
     var key, i;
     if (docs){
-        docs.forEach(function(item, i) {
-          if (!unic[item.id] ||
-               Date.parse(docs[unic[item.id]].dateModified) <
-               Date.parse(item.dateModified)
-             )
-             unic[item.id] = i;
-        });
-        for (key in unic)
-          result.push(docs[unic[key]]);
+      docs.forEach(function(item, i) {
+        if (!unic[item.id] ||
+            Date.parse(docs[unic[item.id]].dateModified) <
+            Date.parse(item.dateModified)
+        )
+          unic[item.id] = i;
+      });
+      for (key in unic)
+        result.push(docs[unic[key]]);
     }
     return result;
   }
@@ -81,7 +88,7 @@ function(doc, req) {
   function getLastDoc(docs, id) {
     if (docs){
       var allDocs = [],
-          length = docs.length;
+      length = docs.length;
       var result;
 
       for(;length--;)
@@ -92,7 +99,6 @@ function(doc, req) {
         result.previousVersions = allDocs.slice(1);
     }
     return result;
-
   }
 
   function clearFields(data) {

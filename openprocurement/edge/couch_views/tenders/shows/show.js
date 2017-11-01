@@ -49,8 +49,8 @@ function(doc, req) {
       }
     },
     questions:{
-        id: req.query.question_id
-      }
+      id: req.query.question_id
+    }
   };
   var FIELDS_TO_CLEAR = ['_id','_rev', '_revisions', 'doc_type'];
 
@@ -76,35 +76,38 @@ function(doc, req) {
   }
 
   function formatResponse(data, req, schema) {
-   var query = Object.keys(req.query);
-   var key = query[query.length -1]
-   var name;
-
-  if(!data) {
-
-    if(req.query[key] == '*') {
-      return {
-        body: JSON.stringify({data:[]}),
-        headers: {"Content-Type": "text/plain; charset=utf-8"}
-      };
-    }
-
+    var query = Object.keys(req.query);
+    var key = query[query.length -1]
+    var name;
     query.length != 0 ? name = key : name = 'tender_id';
 
-      return {
-        code: 404,
-        json: {
-            "status": "error",
-            "errors":[{
-                "location": "url",
-                "name": name,
-                "description": "Not found"
-            }]
-        }
-      };
+    var notFoundObj = {
+      code: 404,
+      json: {
+        "status": "error",
+        "errors":[{
+          "location": "url",
+          "name": name,
+          "description": "Not found"
+        }]
+      }
+    };
 
-   }
-      clearFields(data);
+    if (doc.doc_type && doc.doc_type != 'Tender' ) {
+      return notFoundObj
+    }
+    if(!data) {
+      if(req.query[key] == '*') {
+        return {
+          body: JSON.stringify({data:[]}),
+          headers: {"Content-Type": "text/plain; charset=utf-8"}
+        };
+      }
+
+      return notFoundObj
+    }
+
+    clearFields(data);
 
     return {
       body: JSON.stringify({data:data}),
@@ -119,10 +122,10 @@ function(doc, req) {
     if(docs){
       docs.forEach(function(item, i) {
         if (!unic[item.id] ||
-             Date.parse(docs[unic[item.id]].dateModified) <
-             Date.parse(item.dateModified)
-           )
-           unic[item.id] = i;
+            Date.parse(docs[unic[item.id]].dateModified) <
+            Date.parse(item.dateModified)
+        )
+          unic[item.id] = i;
       });
       for (key in unic)
         result.push(docs[unic[key]]);
@@ -138,20 +141,19 @@ function(doc, req) {
   function getLastDoc(docs, id) {
     if(docs){
       var allDocs = [],
-            length = docs.length;
-        var result;
+      length = docs.length;
+      var result;
 
-        for(;length--;)
-          if (docs[length].id === id) allDocs.push(docs[length]);
+      for(;length--;)
+        if (docs[length].id === id) allDocs.push(docs[length]);
 
-        result = allDocs.length ? allDocs[0] : null;
-        if (allDocs.length > 1)
-          result.previousVersions = allDocs.slice(1);
+      result = allDocs.length ? allDocs[0] : null;
+      if (allDocs.length > 1)
+        result.previousVersions = allDocs.slice(1);
 
-        hideUrl(result);
+      hideUrl(result);
     }
     return result;
-
   }
 
   function hideUrl(doc) {
