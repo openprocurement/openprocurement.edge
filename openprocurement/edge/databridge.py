@@ -26,6 +26,7 @@ from gevent import spawn, sleep
 from gevent.queue import Queue, Empty
 from datetime import datetime, timedelta
 from .workers import ResourceItemWorker
+from time import time
 
 try:
     import urllib3.contrib.pyopenssl
@@ -217,13 +218,20 @@ class EdgeDataBridge(object):
             logger.debug('Add to temp queue from sync: {} {} {}'.format(
                 self.workers_config['resource'][:-1], resource_item['id'],
                 resource_item['dateModified']),
-                extra={'MESSAGE_ID': 'received_from_sync'})
+                extra={'MESSAGE_ID': 'received_from_sync',
+                       'TEMP_QUEUE_SIZE': self.input_queue.qsize()})
 
     def send_bulk(self, input_dict):
         sleep_before_retry = 2
         for i in xrange(0, 3):
             try:
+                logger.debug('Send check bulk: {}'.format(len(input_dict)),
+                             extra={'CHECK_BULK_LEN': len(input_dict)})
+                start = time()
                 rows = self.db.view(self.view_path, keys=input_dict.values())
+                end = time() - start
+                logger.debug('Duration bulk ckeck: {} sec.'.format(end),
+                             extra={'CHECK_BULK_DURATION': end * 1000})
                 resp_dict = {k.id: k.key for k in rows}
                 break
             except (IncompleteRead, Exception) as e:
@@ -266,6 +274,7 @@ class EdgeDataBridge(object):
 
             # Add resource_item to bulk
             if resource_item is not None:
+                logger.debug('Add to input_dict {}'.format(resource_item['id']))
                 input_dict[resource_item['id']] = resource_item['dateModified']
 
             if (len(input_dict) >= self.bulk_query_limit or
