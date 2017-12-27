@@ -39,7 +39,7 @@ entry_points = {
 }
 
 setup(name='openprocurement.edge',
-      version='1.0.0dev7',
+      version='1.0.0',
       description='openprocurement.edge',
       long_description=README,
       classifiers=[
