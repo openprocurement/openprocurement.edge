@@ -199,9 +199,10 @@ class ResourceItemWorker(Greenlet):
                         self.config['client_inc_step_timeout']
                 self.api_clients_queue.put(api_client_dict)
                 logger.warning(
-                        'PUT API CLIENT: {} after {} sec.'.format(api_client_dict['id'],
-                                                                  api_client_dict['request_interval']),
-                        extra={'MESSAGE_ID': 'put_client'})
+                    'PUT API CLIENT: {} after {} sec.'.format(
+                        api_client_dict['id'],
+                        api_client_dict['request_interval']),
+                    extra={'MESSAGE_ID': 'put_client'})
             else:
                 self.api_clients_queue.put(api_client_dict)
                 logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
