@@ -62,8 +62,8 @@ class ResourceItemWorker(Greenlet):
                     resource_item['id'], self.config['retries_count']),
                 extra={'MESSAGE_ID': 'droped_documents'})
         else:
-            spawn(self.retry_resource_items_queue.put,
-                  resource_item, timeout=timeout)
+            self.retry_resource_items_queue.put(resource_item)
+            sleep(timeout)
             logger.info('Put {} {} to \'retries_queue\''.format(
                 self.config['resource'][:-1], resource_item['id']),
                 extra={'MESSAGE_ID': 'add_to_retry'})
@@ -73,6 +73,9 @@ class ResourceItemWorker(Greenlet):
             try:
                 api_client_dict = self.api_clients_queue.get(
                     timeout=self.config['queue_timeout'])
+                logger.debug('GET API CLIENT: {}'.format(api_client_dict['id']),
+                             extra={'MESSAGE_ID': 'get_client'})
+                logger.debug('SLEEP before return client: {}'.format(api_client_dict['request_interval']))
             except Empty:
                 return None
             if self.api_clients_info[api_client_dict['id']]['drop_cookies']:
@@ -90,6 +93,8 @@ class ResourceItemWorker(Greenlet):
                         api_client_dict['id']))
                 except (Exception, ConnectionError) as e:
                     self.api_clients_queue.put(api_client_dict)
+                    logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                                 extra={'MESSAGE_ID': 'put_client'})
                     logger.error('While renewing cookies catch exception: '
                                  '{}'.format(e.message))
                     return None
@@ -145,11 +150,17 @@ class ResourceItemWorker(Greenlet):
                     'dateModified': queue_resource_item['dateModified']
                 })
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                             extra={'MESSAGE_ID': 'put_client'})
                 return None  # Not actual
             self.api_clients_queue.put(api_client_dict)
+            logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                         extra={'MESSAGE_ID': 'put_client'})
             return resource_item
         except ResourceGone:
             self.api_clients_queue.put(api_client_dict)
+            logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                         extra={'MESSAGE_ID': 'put_client'})
             logger.info(
                 '{} {} archived.'.format(self.config['resource'][:-1].title(),
                                          queue_resource_item['id'])
@@ -161,6 +172,8 @@ class ResourceItemWorker(Greenlet):
             self.api_clients_info[api_client_dict['id']]['request_interval'] =\
                 api_client_dict['request_interval']
             self.api_clients_queue.put(api_client_dict)
+            logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                         extra={'MESSAGE_ID': 'put_client'})
             logger.error(
                 'Error while getting {} {} from public with status code: '
                 '{}'.format(
@@ -184,10 +197,16 @@ class ResourceItemWorker(Greenlet):
                 else:
                     api_client_dict['request_interval'] +=\
                         self.config['client_inc_step_timeout']
-                spawn(self.api_clients_queue.put, api_client_dict,
-                      timeout=api_client_dict['request_interval'])
+                self.api_clients_queue.put(api_client_dict)
+                logger.warning(
+                    'PUT API CLIENT: {} after {} sec.'.format(
+                        api_client_dict['id'],
+                        api_client_dict['request_interval']),
+                    extra={'MESSAGE_ID': 'put_client'})
             else:
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                             extra={'MESSAGE_ID': 'put_client'})
             logger.error(
                 'Request failed while getting {} {} from public with status '
                 'code {}: '.format(
@@ -214,6 +233,8 @@ class ResourceItemWorker(Greenlet):
                 'dateModified': queue_resource_item['dateModified']
             })
             self.api_clients_queue.put(api_client_dict)
+            logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                         extra={'MESSAGE_ID': 'put_client'})
             return None  # not found
         except Exception as e:
             self.api_clients_info[api_client_dict['id']][
@@ -221,6 +242,8 @@ class ResourceItemWorker(Greenlet):
             self.api_clients_info[api_client_dict['id']]['request_interval'] =\
                 api_client_dict['request_interval']
             self.api_clients_queue.put(api_client_dict)
+            logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                         extra={'MESSAGE_ID': 'put_client'})
             logger.error(
                 'Error while getting resource item {} {} {} from public '
                 '{}: '.format(
@@ -261,7 +284,8 @@ class ResourceItemWorker(Greenlet):
             self.bulk[resource_item['id']] = resource_item
             logger.debug('Put in bulk {} {} {}'.format(
                 self.config['resource'][:-1], resource_item['id'],
-                resource_item['dateModified']))
+                resource_item['dateModified']),
+                extra={'MESSAGE_ID': 'add_to_save_bulk'})
         return
 
     def _save_bulk_docs(self):
@@ -269,7 +293,13 @@ class ResourceItemWorker(Greenlet):
                 (datetime.now() - self.start_time).total_seconds() >
                 self.bulk_save_interval or self.exit):
             try:
+                logger.debug('Try save bulk: {}'.format(len(self.bulk)),
+                             extra={'SAVE_BULK_LEN': len(self.bulk)})
+                start = time.time()
                 res = self.db.update(self.bulk.values())
+                end = time.time() - start
+                logger.debug('Bulk save duration: {} sec.'.format(end),
+                             extra={'SAVE_BULK_DURATION': end})
                 for resource_item in self.bulk.values():
                     ts = (datetime.now(TZ) -
                           parse_date(resource_item[
@@ -328,6 +358,8 @@ class ResourceItemWorker(Greenlet):
             queue_resource_item = self._get_resource_item_from_queue()
             if queue_resource_item is None:
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                             extra={'MESSAGE_ID': 'put_client'})
                 logger.debug('Resource items queue is empty.')
                 sleep(self.config['worker_sleep'])
                 continue
@@ -358,9 +390,13 @@ class ResourceItemWorker(Greenlet):
                         resource_item_doc['dateModified']),
                         extra={'MESSAGE_ID': 'skiped'})
                     self.api_clients_queue.put(api_client_dict)
+                    logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                                 extra={'MESSAGE_ID': 'put_client'})
                     continue
             except Exception as e:
                 self.api_clients_queue.put(api_client_dict)
+                logger.debug('PUT API CLIENT: {}'.format(api_client_dict['id']),
+                             extra={'MESSAGE_ID': 'put_client'})
                 self.add_to_retry_queue({
                     'id': queue_resource_item['id'],
                     'dateModified': queue_resource_item['dateModified']
