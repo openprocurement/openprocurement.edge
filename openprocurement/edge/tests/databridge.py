@@ -129,6 +129,10 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             pass
 
     def test_init(self):
+        self.config['main']['input_queue_size'] = -1
+        bridge = EdgeDataBridge(self.config)
+        self.assertEqual(bridge.input_queue_size, -1)
+        self.config['main']['input_queue_size'] = 1
         bridge = EdgeDataBridge(self.config)
         self.assertIn('resources_api_server', bridge.config['main'])
         self.assertIn('resources_api_version', bridge.config['main'])
@@ -377,9 +381,12 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
     @patch('openprocurement.edge.databridge.APIClient')
     def test_create_api_client(self, mock_APIClient):
-        mock_APIClient.side_effect = [RequestFailed(), munchify({
-            'session': {'headers': {'User-Agent': 'test.agent'}}
-        })]
+        mock_APIClient.side_effect = [
+            RequestFailed(), Exception('Test create client exception'),
+            munchify({
+                'session': {'headers': {'User-Agent': 'test.agent'}}
+                })
+        ]
         bridge = EdgeDataBridge(self.config)
         self.assertEqual(bridge.api_clients_queue.qsize(), 0)
         bridge.create_api_client()

@@ -55,7 +55,7 @@ def prepare_couchdb(couch_url, db_name, logger):
         else:
             db = server[db_name]
     except error as e:
-        logger.error('Database error: {}'.format(e.message))
+        logger.error('Database error: {}'.format(repr(e)))
         raise DataBridgeConfigError(e.strerror)
 
     validate_doc = db.get(VALIDATE_BULK_DOCS_ID, {'_id': VALIDATE_BULK_DOCS_ID})

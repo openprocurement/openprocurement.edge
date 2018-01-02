@@ -3,7 +3,10 @@ import unittest
 import logging
 import os
 import uuid
+from socket import error
+from cornice.util import json_error
 from couchdb import Server
+from munch import munchify
 from mock import patch, MagicMock
 from openprocurement.edge.utils import (
     VALIDATE_BULK_DOCS_ID,
@@ -14,7 +17,8 @@ from openprocurement.edge.utils import (
     push_views,
     update_logging_context,
     fix_url,
-    VERSION
+    VERSION,
+    error_handler
 )
 
 logger = logging.getLogger()
@@ -67,10 +71,10 @@ class TestUtils(unittest.TestCase):
         # Database don't exist and create with exception
         del server[self.db_name]
         with patch('openprocurement.edge.utils.Server.create') as mock_create:
-            mock_create.side_effect = DataBridgeConfigError('test error')
+            mock_create.side_effect = error('test error')
             with self.assertRaises(DataBridgeConfigError) as e:
                 prepare_couchdb(self.couch_url, self.db_name, logger)
-            self.assertEqual(e.exception.message, 'test error')
+            self.assertEqual(e.exception.message, None)
 
         self.assertNotIn(self.db_name, server)
         prepare_couchdb(self.couch_url, self.db_name, logger)
@@ -105,6 +109,21 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(DataBridgeConfigError) as e:
             push_views(couchapp_path='/haha', couch_url='')
         self.assertEqual(e.exception.message, 'Invalid path to couchapp.')
+
+    def test_error_handler(self):
+        mocked_errors = munchify({
+            'request': {'matchdict': {'key': 'value'}},
+            'status': 403
+        })
+        res = error_handler(mocked_errors, request_params=False)
+        self.assertEqual(res.status, '403 Forbidden')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(
+            res.body,
+            '{"status": "error", "errors": {"status": 403, "request": ' \
+            '{"logging_context": {"ERROR_STATUS": 403, "KEY": "value"}, ' \
+            '"matchdict": {"key": "value"}}}}')
+
 
 
 def suite():
