@@ -402,7 +402,7 @@ class ResourceItemWorker(Greenlet):
                     'dateModified': queue_resource_item['dateModified']
                 })
                 logger.error('Error while getting resource item from couchdb: '
-                             '{}'.format(e.message),
+                             '{}'.format(repr(e)),
                              extra={'MESSAGE_ID': 'exceptions'})
                 continue
 
