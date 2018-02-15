@@ -12,6 +12,7 @@ from gevent.queue import Queue
 from couchdb import Server
 from mock import MagicMock, patch
 from munch import munchify
+from random import randint
 from httplib import IncompleteRead
 from openprocurement_client.exceptions import RequestFailed
 from openprocurement.edge.tests.base import TenderBaseWebTest
@@ -55,7 +56,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             'workers_max': 2,
             'retry_workers_count': 2,
             'filter_workers_count': 1,
-            'retry_workers_count': 2,
             'retry_default_timeout': 0.1,
             'worker_sleep': 0.1,
             'watch_interval': 0.1,
@@ -265,6 +265,38 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
     def test_fill_input_queue(self):
         bridge = EdgeDataBridge(self.config)
+        bridge.workers_config['historical'] = True
+        mock_api_client = MagicMock()
+        client_dict = {
+            'id': uuid.uuid4().hex,
+            'request_interval': 0.02,
+            'client': mock_api_client
+        }
+        bridge.api_clients_queue.put(client_dict)
+        return_value = [
+            {
+                'id': uuid.uuid4().hex,
+                'dateModified': datetime.datetime.utcnow().isoformat()
+            }
+        ]
+        resource_item_return_value = {
+            'id': return_value[0]['id'],
+            'x_revision_n': randint(10, 99)
+        }
+
+        mock_api_client.get_resource_item_historical.return_value = resource_item_return_value
+        bridge.feeder.get_resource_items = MagicMock(return_value=return_value)
+        self.assertEqual(bridge.input_queue.qsize(), 0)
+        bridge.fill_input_queue()
+        self.assertEqual(bridge.resource_items_queue.qsize(), resource_item_return_value['x_revision_n'])
+
+        bridge.resource_items_queue = Queue()
+        mock_api_client.get_resource_item_historical.side_effect = RequestFailed(
+            munchify({'status_code': 429}))
+        bridge.fill_input_queue()
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
+
+        bridge = EdgeDataBridge(self.config)
         return_value = [
             {'id': uuid.uuid4().hex,
              'dateModified': datetime.datetime.utcnow().isoformat()}
@@ -298,6 +330,18 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             bridge.send_bulk(input_dict)
         self.assertEqual(e.exception.message, 'test')
 
+        # historical
+        rev_1 = randint(10, 99)
+        input_dict = {
+            id_1: rev_1
+
+        }
+        bridge = EdgeDataBridge(self.config)
+        bridge.workers_config['historical'] = True
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
+        bridge.send_bulk(input_dict)
+        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
+
     def test_fill_resource_items_queue(self):
         bridge = EdgeDataBridge(self.config)
         db_dict_list = [
@@ -313,6 +357,12 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             bridge.fill_resource_items_queue()
         self.assertEqual(bridge.resource_items_queue.qsize(), 0)
 
+        bridge.workers_config['historical'] = True
+        with patch('__builtin__.True', AlmostAlwaysTrue(1)):
+            bridge.fill_resource_items_queue()
+        self.assertEqual(bridge.resource_items_queue.qsize(), 0)
+        bridge.workers_config['historical'] = False
+
         for item in db_dict_list:
             bridge.input_queue.put({
                 'id': item['id'],
@@ -325,6 +375,18 @@ class TestEdgeDataBridge(TenderBaseWebTest):
             })
         ]
         bridge.db.view = MagicMock(return_value=view_return_list)
+        with patch('__builtin__.True', AlmostAlwaysTrue(1)):
+            bridge.fill_resource_items_queue()
+        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
+
+        bridge.input_queue = Queue()
+        bridge.resource_items_queue = Queue()
+        bridge.workers_config['historical'] = True
+        for item in db_dict_list:
+            bridge.input_queue.put({
+                'id': item['id'],
+                'rev': randint(10, 99)
+            })
         with patch('__builtin__.True', AlmostAlwaysTrue(1)):
             bridge.fill_resource_items_queue()
         self.assertEqual(bridge.resource_items_queue.qsize(), 1)

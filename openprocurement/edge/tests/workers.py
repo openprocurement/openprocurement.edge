@@ -8,6 +8,7 @@ from gevent import sleep, idle
 from gevent.queue import Queue, Empty
 from mock import MagicMock, patch, call
 from munch import munchify
+from random import randint
 from openprocurement_client.exceptions import (
     InvalidResponse,
     RequestFailed,
@@ -33,7 +34,9 @@ class TestResourceItemWorker(unittest.TestCase):
         'retries_count': 2,
         'queue_timeout': 0.3,
         'bulk_save_limit': 1,
-        'bulk_save_interval': 0.1
+        'bulk_save_interval': 0.1,
+        'historical': False,
+        'token': '',
     }
 
     def tearDown(self):
@@ -177,6 +180,130 @@ class TestResourceItemWorker(unittest.TestCase):
 
     @patch('openprocurement_client.client.TendersClient')
     def test__get_resource_item_from_public(self, mock_api_client):
+        # historical
+        self.worker_config['historical'] = True
+
+        item = {
+            'id': uuid.uuid4().hex,
+            'rev': str(randint(10, 99))
+        }
+        api_clients_queue = Queue()
+        client_dict = {
+            'id': uuid.uuid4().hex,
+            'request_interval': 0.02,
+            'client': mock_api_client
+        }
+        api_clients_queue.put(client_dict)
+        api_clients_info = \
+            {client_dict['id']: {'drop_cookies': False, 'request_durations': {}}}
+        retry_queue = Queue()
+        return_dict = {
+            'data': {
+                'id': item['id'],
+                'rev': item['rev']
+            }
+        }
+        mock_api_client.get_resource_item_historical.return_value = return_dict
+        worker = ResourceItemWorker(api_clients_queue=api_clients_queue,
+                                    config_dict=self.worker_config,
+                                    retry_resource_items_queue=retry_queue,
+                                    api_clients_info=api_clients_info)
+
+        # Success test
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(api_client['request_interval'], 0.02)
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 0)
+        self.assertEqual(public_item, return_dict['data'])
+
+        # InvalidResponse
+        mock_api_client.get_resource_item_historical.side_effect =\
+            InvalidResponse('invalid response')
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 0)
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 1)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+
+        # RequestFailed status_code=429
+        mock_api_client.get_resource_item_historical.side_effect = RequestFailed(
+            munchify({'status_code': 429}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        self.assertEqual(api_client['request_interval'], 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 2)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        self.assertEqual(api_client['request_interval'],
+                         worker.config['client_inc_step_timeout'])
+
+        # RequestFailed status_code=429 with drop cookies
+        api_client['request_interval'] = 2
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        sleep(api_client['request_interval'])
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(public_item, None)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 3)
+
+        # RequestFailed with status_code not equal 429
+        mock_api_client.get_resource_item_historical.side_effect = RequestFailed(
+            munchify({'status_code': 404}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 4)
+
+        # ResourceNotFound
+        mock_api_client.get_resource_item_historical.side_effect = RNF(
+            munchify({'status_code': 404}))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 5)
+
+        # ResourceGone
+        mock_api_client.get_resource_item_historical.side_effect = ResourceGone(munchify(
+            {'status_code': 410}
+        ))
+        api_client = worker._get_api_client_dict()
+        self.assertEqual(worker.api_clients_queue.qsize(), 0)
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(worker.api_clients_queue.qsize(), 1)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 5)
+
+        # Exception
+        api_client = worker._get_api_client_dict()
+        mock_api_client.get_resource_item_historical.side_effect =\
+            Exception('text except')
+        public_item = worker._get_resource_item_from_public(api_client, item)
+        self.assertEqual(public_item, None)
+        self.assertEqual(api_client['request_interval'], 0)
+        sleep(worker.config['retry_default_timeout'] * 2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 6)
+
+        self.worker_config['historical'] = False
         item = {
             'id': uuid.uuid4().hex,
             'dateModified': datetime.datetime.utcnow().isoformat()
@@ -311,6 +438,29 @@ class TestResourceItemWorker(unittest.TestCase):
         del worker
 
     def test__add_to_bulk(self):
+        self.worker_config['historical'] = True
+        retry_queue = Queue()
+        queue_resource_item = {
+            'doc_type': 'Tender',
+            'id': uuid.uuid4().hex,
+            'rev': str(randint(10, 99))
+        }
+        resource_item_dict = {
+            'doc_type': 'Tender',
+            'id': queue_resource_item['id'],
+            'rev': queue_resource_item['rev']
+        }
+        worker = ResourceItemWorker(config_dict=self.worker_config,
+                                    retry_resource_items_queue=retry_queue)
+        worker.db = MagicMock()
+
+        # Successful adding to bulk
+        start_length = len(worker.bulk)
+        worker._add_to_bulk(resource_item_dict)
+        end_length = len(worker.bulk)
+        self.assertGreater(end_length, start_length)
+
+        self.worker_config['historical'] = False
         retry_queue = Queue()
         old_date_modified = datetime.datetime.utcnow().isoformat()
         queue_resource_item = {
@@ -333,10 +483,9 @@ class TestResourceItemWorker(unittest.TestCase):
                                     retry_resource_items_queue=retry_queue)
         worker.db = MagicMock()
 
-        # Successfull adding to bulk
+        # Successful adding to bulk
         start_length = len(worker.bulk)
-        worker._add_to_bulk(resource_item_dict, queue_resource_item,
-                            resource_item_doc_dict)
+        worker._add_to_bulk(resource_item_dict, resource_item_doc_dict)
         end_length = len(worker.bulk)
         self.assertGreater(end_length, start_length)
 
@@ -345,21 +494,21 @@ class TestResourceItemWorker(unittest.TestCase):
         new_resource_item_dict = deepcopy(resource_item_dict)
         new_resource_item_dict['dateModified'] =\
             datetime.datetime.utcnow().isoformat()
-        worker._add_to_bulk(new_resource_item_dict, queue_resource_item,
-                            resource_item_doc_dict)
+        worker._add_to_bulk(new_resource_item_dict, resource_item_doc_dict)
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
 
-        # Ignored dublicate in bulk
+        # Ignored duplicate in bulk
         start_length = end_length
         worker._add_to_bulk({
             'doc_type': 'Tender',
             'id': queue_resource_item['id'],
             '_id': queue_resource_item['id'],
             'dateModified': old_date_modified
-        }, queue_resource_item, resource_item_dict)
+        }, resource_item_dict)
         end_length = len(worker.bulk)
         self.assertEqual(start_length, end_length)
+
         del worker
 
     def test__save_bulk_docs(self):
@@ -405,6 +554,16 @@ class TestResourceItemWorker(unittest.TestCase):
         sleep(0.2)
         self.assertEqual(worker.retry_resource_items_queue.qsize(), 5)
         self.assertEqual(len(worker.bulk), 0)
+
+        worker.config['historical'] = True
+        worker.bulk = {
+            doc_id_1: {'id': doc_id_1, 'rev': randint(10, 99)}
+        }
+        worker._save_bulk_docs()
+        sleep(0.2)
+        self.assertEqual(worker.retry_resource_items_queue.qsize(), 6)
+        self.assertEqual(len(worker.bulk), 0)
+        worker.config['historical'] = False
 
     def test_shutdown(self):
         worker = ResourceItemWorker(
@@ -508,8 +667,8 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], queue_item['dateModified'])),
+                call('Get tender {} from main queue.'.format(
+                    doc['id'])),
                 call('Put in bulk tender {} {}'.format(doc['id'],
                                                        doc['dateModified']),
                      extra={'MESSAGE_ID': 'add_to_save_bulk'})
@@ -531,8 +690,8 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], None))
+                call('Get tender {} from main queue.'.format(
+                    doc['id']))
             ]
         )
 
@@ -552,18 +711,18 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], None)),
+                call('Get tender {} from main queue.'.format(
+                    doc['id'])),
                 call('GET API CLIENT: {}'.format(api_client_dict['id']),
                      extra={'MESSAGE_ID': 'get_client'}),
                 call('SLEEP before return client: 0'),
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Ignored dublicate tender {} in bulk: previous {}, '
+                call('Ignored duplicate tender {} in bulk: previous {}, '
                      'current {}'.format(
                     doc['id'], doc['dateModified'], doc['dateModified']),
-                    extra={'MESSAGE_ID': 'skiped'})
+                    extra={'MESSAGE_ID': 'skipped'})
             ]
         )
 
@@ -583,8 +742,8 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], None))
+                call('Get tender {} from main queue.'.format(
+                    doc['id']))
             ]
         )
         mocked_logger.info.assert_called_once_with(
@@ -609,18 +768,18 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], None)),
+                call('Get tender {} from main queue.'.format(
+                    doc['id'])),
                 call('GET API CLIENT: {}'.format(api_client_dict['id']),
                      extra={'MESSAGE_ID': 'get_client'}),
                 call('SLEEP before return client: 0'),
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Ignored dublicate tender {} in bulk: previous {}, '
+                call('Ignored duplicate tender {} in bulk: previous {}, '
                      'current {}'.format(
                     doc['id'], doc['dateModified'], doc['dateModified']),
-                    extra={'MESSAGE_ID': 'skiped'})
+                    extra={'MESSAGE_ID': 'skipped'})
             ]
         )
         self.assertEqual(mocked_logger.info.call_count, 1)
@@ -641,8 +800,8 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], None)),
+                call('Get tender {} from main queue.'.format(
+                    doc['id'])),
                 call('PUT API CLIENT: {}'.format(api_client_dict['id']),
                      extra={'MESSAGE_ID': 'put_client'})
             ]
@@ -674,8 +833,8 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], new_date_modified))
+                call('Get tender {} from main queue.'.format(
+                    doc['id']))
             ]
         )
         self.assertEqual(mocked_logger.info.call_count, 2)
@@ -697,12 +856,12 @@ class TestResourceItemWorker(unittest.TestCase):
                 call('Got api_client ID: {} {}'.format(
                     api_client_dict['id'],
                     client.session.headers['User-Agent'])),
-                call('Get tender {} {} from main queue.'.format(
-                    doc['id'], new_date_modified)),
-                call('Ignored dublicate tender {} in bulk: previous {}, '
+                call('Get tender {} from main queue.'.format(
+                    doc['id'])),
+                call('Ignored duplicate tender {} in bulk: previous {}, '
                      'current {}'.format(
                     doc['id'], doc['dateModified'], doc['dateModified']),
-                    extra={'MESSAGE_ID': 'skiped'})
+                    extra={'MESSAGE_ID': 'skipped'})
             ]
         )
         self.assertEqual(mocked_logger.info.call_count, 2)
