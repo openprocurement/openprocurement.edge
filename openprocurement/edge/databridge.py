@@ -294,6 +294,8 @@ class EdgeDataBridge(object):
             else:
                 timeout = self.bulk_query_interval -\
                     (datetime.now() - start_time).total_seconds()
+                if timeout > self.bulk_query_interval:
+                    timeout = self.bulk_query_iterval
                 try:
                     resource_item = self.input_queue.get(timeout=timeout)
                 except Empty:
@@ -302,10 +304,7 @@ class EdgeDataBridge(object):
             # Add resource_item to bulk
             if resource_item is not None:
                 logger.debug('Add to input_dict {}'.format(resource_item['id']))
-                if self.workers_config['historical']:
-                    input_dict[resource_item['id']] = resource_item['rev']
-                else:
-                    input_dict[resource_item['id']] = resource_item['dateModified']
+                input_dict[resource_item['id']] = resource_item['dateModified']
 
             if (len(input_dict) >= self.bulk_query_limit or
                 (datetime.now() - start_time).total_seconds() >=
@@ -411,7 +410,7 @@ class EdgeDataBridge(object):
         logger.info('Input threads {}'.format(input_threads),
                     extra={'INPUT_THREADS': input_threads})
         fill_threads = 1
-        if self.filler.exception:
+        if not self.workers_config['historical'] and self.filler.exception:
             fill_threads = 0
             logger.error('Fill thread error: {}'.format(
                 self.filler.exception.message),
@@ -525,7 +524,8 @@ class EdgeDataBridge(object):
         logger.info('Start data sync...',
                     extra={'MESSAGE_ID': 'edge_bridge__data_sync'})
         self.input_queue_filler = spawn(self.fill_input_queue)
-        self.filler = spawn(self.fill_resource_items_queue)
+        if not self.workers_config['historical']:
+            self.filler = spawn(self.fill_resource_items_queue)
         spawn(self.queues_controller)
         while True:
             self.gevent_watcher()

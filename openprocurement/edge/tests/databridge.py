@@ -387,9 +387,6 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 'id': item['id'],
                 'rev': randint(10, 99)
             })
-        with patch('__builtin__.True', AlmostAlwaysTrue(1)):
-            bridge.fill_resource_items_queue()
-        self.assertEqual(bridge.resource_items_queue.qsize(), 1)
 
     @patch('openprocurement.edge.databridge.spawn')
     @patch('openprocurement.edge.databridge.ResourceItemWorker.spawn')
