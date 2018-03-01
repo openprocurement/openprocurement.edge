@@ -265,10 +265,10 @@ class TestEdgeDataBridge(TenderBaseWebTest):
 
     def test_fill_input_queue(self):
         bridge = EdgeDataBridge(self.config)
-        return_value = [
-            {'id': uuid.uuid4().hex,
-             'dateModified': datetime.datetime.utcnow().isoformat()}
-        ]
+        return_value = [(
+            1, {'id': uuid.uuid4().hex,
+                'dateModified': datetime.datetime.utcnow().isoformat()}
+        )]
         bridge.feeder.get_resource_items = MagicMock(return_value=return_value)
         self.assertEqual(bridge.input_queue.qsize(), 0)
         bridge.fill_input_queue()
@@ -282,6 +282,7 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         id_2 = uuid.uuid4().hex
         date_modified_2 = datetime.datetime.utcnow().isoformat()
         input_dict = {id_1: date_modified_1, id_2: date_modified_2}
+        priority_cache = {id_1: 1, id_2: 1}
         return_value = [
             munchify({'id': id_1, 'key': date_modified_1}),
             munchify({'id': id_2, 'key': old_date_modified})
@@ -289,13 +290,13 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         bridge = EdgeDataBridge(self.config)
         bridge.db.view = MagicMock(return_value=return_value)
         self.assertEqual(bridge.resource_items_queue.qsize(), 0)
-        bridge.send_bulk(input_dict)
+        bridge.send_bulk(input_dict, priority_cache)
         self.assertEqual(bridge.resource_items_queue.qsize(), 1)
         bridge.db.view.side_effect = [Exception(), Exception(),
                                       Exception('test')]
         input_dict = {}
         with self.assertRaises(Exception) as e:
-            bridge.send_bulk(input_dict)
+            bridge.send_bulk(input_dict, priority_cache)
         self.assertEqual(e.exception.message, 'test')
 
     def test_fill_resource_items_queue(self):
@@ -314,10 +315,10 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         self.assertEqual(bridge.resource_items_queue.qsize(), 0)
 
         for item in db_dict_list:
-            bridge.input_queue.put({
+            bridge.input_queue.put((1, {
                 'id': item['id'],
                 'dateModified': datetime.datetime.utcnow().isoformat()
-            })
+            }))
         view_return_list = [
             munchify({
                 'id': db_dict_list[0]['id'],
