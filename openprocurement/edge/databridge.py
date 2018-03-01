@@ -23,7 +23,7 @@ from openprocurement.edge.utils import (
 )
 import gevent.pool
 from gevent import spawn, sleep
-from gevent.queue import Queue, Empty
+from gevent.queue import PriorityQueue, Queue, Empty
 from datetime import datetime, timedelta
 from .workers import ResourceItemWorker
 from time import time
@@ -113,22 +113,26 @@ class EdgeDataBridge(object):
 
         # Queues
         if self.input_queue_size == -1:
-            self.input_queue = Queue()
+            self.input_queue = PriorityQueue()
         else:
-            self.input_queue = Queue(self.input_queue_size)
+            self.input_queue = PriorityQueue(self.input_queue_size)
+
         if self.resource_items_queue_size == -1:
-            self.resource_items_queue = Queue()
+            self.resource_items_queue = PriorityQueue()
         else:
-            self.resource_items_queue = Queue(self.resource_items_queue_size)
+            self.resource_items_queue = PriorityQueue(
+                self.resource_items_queue_size
+            )
+
         self.api_clients_queue = Queue()
         # self.retry_api_clients_queue = Queue()
+
         if self.retry_resource_items_queue_size == -1:
-            self.retry_resource_items_queue = Queue()
+            self.retry_resource_items_queue = PriorityQueue()
         else:
-            self.retry_resource_items_queue = Queue(
+            self.retry_resource_items_queue = PriorityQueue(
                 self.retry_resource_items_queue_size)
 
-        self.process = psutil.Process(os.getpid())
 
         if self.api_host != '' and self.api_host is not None:
             api_host = urlparse(self.api_host)
@@ -154,7 +158,7 @@ class EdgeDataBridge(object):
                                      resource=self.workers_config['resource'],
                                      extra_params=extra_params,
                                      retrievers_params=self.retrievers_params,
-                                     adaptive=True)
+                                     adaptive=True, with_priority=True)
         self.api_clients_info = {}
 
     def config_get(self, name):
@@ -216,12 +220,12 @@ class EdgeDataBridge(object):
         for resource_item in self.feeder.get_resource_items():
             self.input_queue.put(resource_item)
             logger.debug('Add to temp queue from sync: {} {} {}'.format(
-                self.workers_config['resource'][:-1], resource_item['id'],
-                resource_item['dateModified']),
+                self.workers_config['resource'][:-1], resource_item[1]['id'],
+                resource_item[1]['dateModified']),
                 extra={'MESSAGE_ID': 'received_from_sync',
                        'TEMP_QUEUE_SIZE': self.input_queue.qsize()})
 
-    def send_bulk(self, input_dict):
+    def send_bulk(self, input_dict, priority_cache):
         sleep_before_retry = 2
         for i in xrange(0, 3):
             try:
@@ -230,7 +234,7 @@ class EdgeDataBridge(object):
                 start = time()
                 rows = self.db.view(self.view_path, keys=input_dict.values())
                 end = time() - start
-                logger.debug('Duration bulk ckeck: {} sec.'.format(end),
+                logger.debug('Duration bulk check: {} sec.'.format(end),
                              extra={'CHECK_BULK_DURATION': end * 1000})
                 resp_dict = {k.id: k.key for k in rows}
                 break
@@ -243,32 +247,41 @@ class EdgeDataBridge(object):
                 sleep_before_retry *= 2
         for item_id, date_modified in input_dict.items():
             if item_id in resp_dict and date_modified == resp_dict[item_id]:
-                logger.debug('Ignored {} {}: SYNC - {}, EDGE - {}'.format(
-                    self.workers_config['resource'][:-1], item_id,
-                    date_modified, resp_dict[item_id]),
-                    extra={'MESSAGE_ID': 'skiped'})
-            else:
+                logger.debug('Skipped {} {}: In db exist newest.'.format(
+                    self.workers_config['resource'][:-1], item_id),
+                    extra={'MESSAGE_ID': 'skipped'})
+            elif ((1, item_id) not in self.resource_items_queue.queue and
+                    (1000, item_id) not in self.resource_items_queue.queue):
                 self.resource_items_queue.put(
-                    {'id': item_id, 'dateModified': date_modified})
-                logger.debug('Put to main queue {}: {} {}'.format(
-                    self.workers_config['resource'][:-1], item_id,
-                    date_modified),
+                    (priority_cache[item_id], item_id)
+                )
+                logger.debug('Put to main queue {}: {}'.format(
+                    self.workers_config['resource'][:-1], item_id),
                     extra={'MESSAGE_ID': 'add_to_resource_items_queue'})
+            else:
+                logger.debug(
+                    'Skipped {} {}: In queue exist with same id'.format(
+                        self.workers_config['resource'][:-1], item_id
+                    ),
+                    extra={'MESSAGE_ID': 'skipped'})
 
     def fill_resource_items_queue(self):
         start_time = datetime.now()
         input_dict = {}
+        priority_cache = {}
         while True:
             # Get resource_item from temp queue
             if not self.input_queue.empty():
-                resource_item = self.input_queue.get()
+                priority, resource_item = self.input_queue.get()
             else:
                 timeout = self.bulk_query_interval -\
                     (datetime.now() - start_time).total_seconds()
                 if timeout > self.bulk_query_interval:
                     timeout = self.bulk_query_interval
                 try:
-                    resource_item = self.input_queue.get(timeout=timeout)
+                    priority, resource_item = self.input_queue.get(
+                        timeout=timeout
+                    )
                 except Empty:
                     resource_item = None
 
@@ -276,13 +289,15 @@ class EdgeDataBridge(object):
             if resource_item is not None:
                 logger.debug('Add to input_dict {}'.format(resource_item['id']))
                 input_dict[resource_item['id']] = resource_item['dateModified']
+                priority_cache[resource_item['id']] = priority
 
             if (len(input_dict) >= self.bulk_query_limit or
                 (datetime.now() - start_time).total_seconds() >=
                     self.bulk_query_interval):
                 if len(input_dict) > 0:
-                    self.send_bulk(input_dict)
+                    self.send_bulk(input_dict, priority_cache)
                     input_dict = {}
+                    priority_cache = {}
                 start_time = datetime.now()
 
     def resource_items_filter(self, r_id, r_date_modified):
