@@ -575,3 +575,11 @@ class PlanBaseWebTest(BaseWebTest):
         del data['_rev']
         del data['doc_type']
         return data
+
+
+class MockedResponse(object):
+
+    def __init__(self, status_code, text=None, headers=None):
+        self.status_code = status_code
+        self.text = text
+        self.headers = headers

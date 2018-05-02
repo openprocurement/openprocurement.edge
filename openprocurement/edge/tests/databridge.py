@@ -14,7 +14,7 @@ from mock import MagicMock, patch
 from munch import munchify
 from httplib import IncompleteRead
 from openprocurement_client.exceptions import RequestFailed
-from openprocurement.edge.tests.base import TenderBaseWebTest
+from openprocurement.edge.tests.base import TenderBaseWebTest, MockedResponse
 from openprocurement.edge.databridge import EdgeDataBridge
 from openprocurement.edge.utils import (
     DataBridgeConfigError,
@@ -448,7 +448,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         with self.assertRaises(DataBridgeConfigError):
             bridge.config_get('couch_url')
 
-    def test__get_average_request_duration(self):
+    @patch('openprocurement_client.api_base_client.Session')
+    def test__get_average_request_duration(self, mocked_session):
+        mocked_session.request.return_value = MockedResponse(200)
         bridge = EdgeDataBridge(self.config)
         bridge.create_api_client()
         bridge.create_api_client()
@@ -492,7 +494,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
         stdev = bridge._calculate_st_dev([])
         self.assertEqual(stdev, 0)
 
-    def test__mark_bad_clients(self):
+    @patch('openprocurement_client.api_base_client.Session')
+    def test__mark_bad_clients(self, mocked_session):
+        mocked_session.request.return_value = MockedResponse(200)
         bridge = EdgeDataBridge(self.config)
         self.assertEqual(bridge.api_clients_queue.qsize(), 0)
         self.assertEqual(len(bridge.api_clients_info), 0)
@@ -519,7 +523,9 @@ class TestEdgeDataBridge(TenderBaseWebTest):
                 to_destroy += 1
         self.assertEqual(to_destroy, 3)
 
-    def test_perfomance_watcher(self):
+    @patch('openprocurement_client.api_base_client.Session')
+    def test_perfomance_watcher(self, mocked_session):
+        mocked_session.request.return_value = MockedResponse(200)
         bridge = EdgeDataBridge(self.config)
         for i in xrange(0, 3):
             bridge.create_api_client()
